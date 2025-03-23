@@ -1,10 +1,6 @@
-import { useState } from 'react'
 import HomePage from './pages/HomePage'
 import { Route, Routes } from 'react-router-dom'
-import Status from './pages/Status'
-import StatusViewer from './pages/StatusViewer'
-import SignIn from './pages/SignIn'
-import Register from './pages/Register'
+
 
 
 function App() {
