@@ -1,26 +1,35 @@
 import { Alert, Button, Snackbar } from '@mui/material';
 import { green } from '@mui/material/colors';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { login } from '../redux/auth/Action';
 
 const SignIn = () => {
     const[inputEmail, setInputEmail] = useState('');
     const[inputPassword, setInputPassword] = useState('');
     const[openSnackBar, setOpenSnackBar] = useState();
+    const { signin   } = useSelector(state => state.auth);
+    const dispatch = useDispatch();
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        dispatch(login({email: inputEmail, password: inputPassword}))
         console.log('submit');
         setOpenSnackBar(true)
     }
     const handleOnchangeEmail =(e) => {
-        setInputEmail(e.value)
+        setInputEmail(e.target.value)
     }
     const handleOnchangePassword =(e) => {
-        setInputPassword(e.value)
+        setInputPassword(e.target.value)
     }
     const handleSnackBarClose = () => {
         setOpenSnackBar(false)
     }
+    useEffect(() => {
+        console.log(signin)
+    },[signin])
   return (
     <div className='bg-[#e8e9ec]'>
         <div className='flex justify-center h-screen items-center'>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AiOutlineSearch } from 'react-icons/ai'
 import { BiCommentDetail } from 'react-icons/bi'
 import { BsEmojiSmile, BsFilter, BsMicFill, BsThreeDotsVertical } from 'react-icons/bs'
@@ -20,6 +20,7 @@ export default function HomePage() {
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
     const handleSearch = () => {
         
     }
@@ -33,6 +34,12 @@ export default function HomePage() {
         setIsProfile(isShow)
         setAnchorEl(null);
     }
+
+    useEffect(() => {
+        if(!token) {
+            navigate('/signin')
+        }
+    },[token])
     // logic xu ly 
     // const messagesWithAvatar = messages.map((message, index, arr) => {
         // const nextMessage = arr[index + 1];
