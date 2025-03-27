@@ -2,15 +2,16 @@ import { Alert, Button, Snackbar } from '@mui/material';
 import { green } from '@mui/material/colors';
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
-import { login } from '../redux/auth/Action';
+import { Link, useNavigate } from 'react-router-dom';
+import { currentUser, login } from '../redux/auth/Action';
 
 const SignIn = () => {
     const[inputEmail, setInputEmail] = useState('');
     const[inputPassword, setInputPassword] = useState('');
     const[openSnackBar, setOpenSnackBar] = useState();
-    const { signin   } = useSelector(state => state.auth);
+    const {signin} = useSelector(state => state.auth);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -29,6 +30,13 @@ const SignIn = () => {
     }
     useEffect(() => {
         console.log(signin)
+        if(signin){
+            if(signin?.status == 200) {
+                localStorage.setItem("token", signin?.token)
+                dispatch(currentUser(signin?.token))
+                navigate("/")
+            }
+        }
     },[signin])
   return (
     <div className='bg-[#e8e9ec]'>

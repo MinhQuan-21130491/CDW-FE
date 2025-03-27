@@ -12,6 +12,8 @@ import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuItem } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
+import { useDispatch, useSelector } from 'react-redux'
+import { currentUser } from '../redux/auth/Action'
 
 export default function HomePage() {
     const[search, setSearch] = useState();
@@ -19,8 +21,10 @@ export default function HomePage() {
     const[content, setContent] = useState();
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    const {user} = useSelector(state => state.auth);
     const handleSearch = () => {
         
     }
@@ -38,6 +42,8 @@ export default function HomePage() {
     useEffect(() => {
         if(!token) {
             navigate('/signin')
+        }else {
+            dispatch(currentUser(token))
         }
     },[token])
     // logic xu ly 
@@ -89,8 +95,8 @@ export default function HomePage() {
                         <div className='flex items-center space-x-3 overflow-hidden'
                             onClick={() => handleNavigateProfile(true)}
                         >
-                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src='https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'></img>
-                            <p className='cursor-pointer text-lg '>Username</p>
+                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src={user?.profile_picture || 'https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'}></img>
+                            <p className='cursor-pointer text-lg '>{user?.full_name}</p>
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
                             <TbCircleDashed onClick = {() => navigate("/status")} className='cursor-pointer'/>
