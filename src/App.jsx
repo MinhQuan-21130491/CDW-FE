@@ -4,17 +4,36 @@ import SignUp from './pages/SignUp'
 import SignIn from './pages/SignIn'
 import Status from './pages/Status'
 import StatusViewer from './pages/StatusViewer'
+import ProtectedRoute from './utils/ProtectedRoute'
 
 function App() {
 
   return (
    <div>
     <Routes>
-      <Route path = "/" element = {<HomePage/>}></Route>
-      <Route path = "/signin" element = {<SignIn/>}></Route>
-      <Route path = "/signup" element={<SignUp/>}></Route>
-      <Route path = "/status" element = {<Status/>}></Route>
-      <Route path = "/status/:userId" element = {<StatusViewer/>}></Route>
+    <Route path = "/signin" element = {<SignIn/>}></Route>
+    <Route path = "/signup" element={<SignUp/>}></Route>
+      <Route path = "/" 
+        element = {
+          <ProtectedRoute>
+              <HomePage/>
+          </ProtectedRoute>
+          }
+      />
+      <Route path = "/status" 
+        element = {
+            <ProtectedRoute>
+                <Status/>
+            </ProtectedRoute>
+            }
+      />
+      <Route path = "/status/:userId"
+         element = {
+            <ProtectedRoute>
+                <StatusViewer/>
+            </ProtectedRoute>
+            }
+      />
     </Routes>
    </div>
   )

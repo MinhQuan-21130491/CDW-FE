@@ -12,6 +12,8 @@ import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuItem } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
+import { useDispatch, useSelector } from 'react-redux'
+import { currentUser } from '../redux/auth/Action'
 
 export default function HomePage() {
     const[search, setSearch] = useState();
@@ -20,7 +22,8 @@ export default function HomePage() {
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const dispatch = useDispatch();
+    const {user} = useSelector(state => state.auth);
     const handleSearch = () => {
         
     }
@@ -34,12 +37,6 @@ export default function HomePage() {
         setIsProfile(isShow)
         setAnchorEl(null);
     }
-
-    useEffect(() => {
-        if(!token) {
-            navigate('/signin')
-        }
-    },[token])
     // logic xu ly 
     // const messagesWithAvatar = messages.map((message, index, arr) => {
         // const nextMessage = arr[index + 1];
@@ -72,6 +69,11 @@ export default function HomePage() {
         setIsGroup(isShow)
         setAnchorEl(null);
     }
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        dispatch(currentUser(token));
+
+    }, [])
 
   return (
     <div className='relative h-screen bg-slate-300 '>
@@ -89,8 +91,8 @@ export default function HomePage() {
                         <div className='flex items-center space-x-3 overflow-hidden'
                             onClick={() => handleNavigateProfile(true)}
                         >
-                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src='https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'></img>
-                            <p className='cursor-pointer text-lg '>Username</p>
+                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src={user?.profile_picture || 'https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'}></img>
+                            <p className='cursor-pointer text-lg '>{user?.full_name}</p>
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
                             <TbCircleDashed onClick = {() => navigate("/status")} className='cursor-pointer'/>
