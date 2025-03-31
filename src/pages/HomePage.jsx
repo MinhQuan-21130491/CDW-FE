@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AiOutlineSearch } from 'react-icons/ai'
 import { BiCommentDetail } from 'react-icons/bi'
 import { BsEmojiSmile, BsFilter, BsMicFill, BsThreeDotsVertical } from 'react-icons/bs'
@@ -12,6 +12,8 @@ import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuItem } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
+import { useDispatch, useSelector } from 'react-redux'
+import { currentUser } from '../redux/auth/Action'
 
 export default function HomePage() {
     const[search, setSearch] = useState();
@@ -20,6 +22,8 @@ export default function HomePage() {
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const {user} = useSelector(state => state.auth);
     const handleSearch = () => {
         
     }
@@ -61,10 +65,23 @@ export default function HomePage() {
     const handleClose = () => {
         setAnchorEl(null);
     };
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/signin')
+    };
     const handleCreateGroup = (isShow) => {
         setIsGroup(isShow)
         setAnchorEl(null);
-    }
+    };
+    const handleUserUpdate = () => {
+        const token = localStorage.getItem('token');
+        dispatch(currentUser(token));
+    };
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        dispatch(currentUser(token));
+    }, [])
 
   return (
     <div className='relative h-screen bg-slate-300 '>
@@ -72,7 +89,7 @@ export default function HomePage() {
         <div className='flex bg-[#f0f2f5] h-[90vh] absolute top-9 left-10 right-10 z-50 shadow-md'>
             <div className='left md:w-[350px] sm:w-[100px] bg-white h-full flex flex-col' >
                 {/* Profile */}
-                {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile} /></div>)}
+                {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile}  user={user} onUpdateUser={handleUserUpdate}/></div>)}
                 {/* Create group */}
                 {isGroup && (<CreateGroup handleNavigate = {handleCreateGroup} />)}
                 {/* Home */}
@@ -82,8 +99,8 @@ export default function HomePage() {
                         <div className='flex items-center space-x-3 overflow-hidden'
                             onClick={() => handleNavigateProfile(true)}
                         >
-                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src='https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'></img>
-                            <p className='cursor-pointer text-lg '>Username</p>
+                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src={user?.profile_picture || 'https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'}></img>
+                            <p className='cursor-pointer text-lg '>{user?.full_name}</p>
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
                             <TbCircleDashed onClick = {() => navigate("/status")} className='cursor-pointer'/>
@@ -108,7 +125,7 @@ export default function HomePage() {
                                 >
                                     <MenuItem onClick={() => handleNavigateProfile(true)}>Thông tin</MenuItem>
                                     <MenuItem onClick={() => handleCreateGroup(true)}>Tạo nhóm</MenuItem>
-                                    <MenuItem onClick={handleClose}>Đăng xuất</MenuItem>
+                                    <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
                                 </Menu>
                             </div>
                         </div>
