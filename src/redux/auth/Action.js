@@ -85,6 +85,7 @@ export const updateUser = (data) => async (dispatch) => {
       body: JSON.stringify(data),
     });
     const resData = await res.json();
+    console.log(resData)
     dispatch({ type: UPDATE_USER, payload: resData });
   } catch (err) {
     console.log(err);

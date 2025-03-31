@@ -1,8 +1,8 @@
 import { Alert, Button, Snackbar } from '@mui/material';
 import { green } from '@mui/material/colors';
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom';
-import {useDispatch} from 'react-redux'
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom';
+import {useDispatch, useSelector} from 'react-redux'
 import { register } from '../redux/auth/Action';
 
 const SignUp = () => {
@@ -12,12 +12,15 @@ const SignUp = () => {
     const[inputPasswordConfirm, setInputPasswordConfirm] = useState('');
     const[openSnackBar, setOpenSnackBar] = useState();
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const[click, setClick] = useState(false);
+    const[status, setStatus] = useState();
+    const {signup} = useSelector(state => state.auth);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('submit');
         dispatch(register({full_name: name, email: inputEmail, password: inputPassword}))
-        setOpenSnackBar(true)
+        setClick(true)
     }
     const handleOnchangeName =(e) => {
         setName(e.target.value)
@@ -34,6 +37,22 @@ const SignUp = () => {
     const handleSnackBarClose = () => {
         setOpenSnackBar(false)
     }
+
+    useEffect(() => {
+        if(signup && click){ 
+            if(signup?.status == 200) {
+                setStatus(true)
+                setOpenSnackBar(true)
+                const timeout = setTimeout(() => {
+                    navigate("/signin");
+                }, 2000);
+                return () => clearTimeout(timeout); // Dọn dẹp timeout khi unmount
+            }else{
+                setStatus(false)
+                setOpenSnackBar(true)   
+            }
+        }
+    },[signup])
   return (
     <div className='bg-[#e8e9ec]'>
         <div className='flex justify-center h-screen items-center'>
@@ -67,13 +86,13 @@ const SignUp = () => {
                     <div>
                         <p className='mb-2'>Nhập lại mật khẩu</p>
                         <input
-placeholder='Nhập lại mật khẩu của bạn'
+                            placeholder='Nhập lại mật khẩu của bạn'
                         onChange={handleOnchangePasswordConfirm}
                         value={inputPasswordConfirm}
                         type='password' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
                     </div>
                     <div className='my-5 text-end'>
-                    <p className='text-sm '>Bạn đã có tài khoản?<Link to="/signin" className='text-sm text-green-600'>Đăng nhập</Link></p>
+                    <p className='text-sm '>Bạn đã có tài khoản?<Link to="/signup" className='text-sm text-green-600'>Đăng nhập</Link></p>
                 </div>
                 <div >
                     <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng ký</Button>
@@ -87,7 +106,7 @@ placeholder='Nhập lại mật khẩu của bạn'
             autoHideDuration={6000}
             onClose={handleSnackBarClose}
         >
-            <Alert onClose={handleSnackBarClose } severity='success' sx={{width:'100%'}}>This is success message!</Alert>
+            <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Đăng ký tài khoản thành công!':'Đăng ký tài khoản thất bại!'}</Alert>
         </Snackbar>
     </div>
   )

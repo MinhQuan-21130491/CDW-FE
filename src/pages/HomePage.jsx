@@ -65,14 +65,22 @@ export default function HomePage() {
     const handleClose = () => {
         setAnchorEl(null);
     };
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        navigate('/signin')
+    };
     const handleCreateGroup = (isShow) => {
         setIsGroup(isShow)
         setAnchorEl(null);
-    }
+    };
+    const handleUserUpdate = () => {
+        const token = localStorage.getItem('token');
+        dispatch(currentUser(token));
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         dispatch(currentUser(token));
-
     }, [])
 
   return (
@@ -81,7 +89,7 @@ export default function HomePage() {
         <div className='flex bg-[#f0f2f5] h-[90vh] absolute top-9 left-10 right-10 z-50 shadow-md'>
             <div className='left md:w-[350px] sm:w-[100px] bg-white h-full flex flex-col' >
                 {/* Profile */}
-                {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile} /></div>)}
+                {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile}  user={user} onUpdateUser={handleUserUpdate}/></div>)}
                 {/* Create group */}
                 {isGroup && (<CreateGroup handleNavigate = {handleCreateGroup} />)}
                 {/* Home */}
@@ -117,7 +125,7 @@ export default function HomePage() {
                                 >
                                     <MenuItem onClick={() => handleNavigateProfile(true)}>Thông tin</MenuItem>
                                     <MenuItem onClick={() => handleCreateGroup(true)}>Tạo nhóm</MenuItem>
-                                    <MenuItem onClick={handleClose}>Đăng xuất</MenuItem>
+                                    <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
                                 </Menu>
                             </div>
                         </div>

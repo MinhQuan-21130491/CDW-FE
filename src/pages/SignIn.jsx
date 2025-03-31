@@ -9,16 +9,17 @@ const SignIn = () => {
     const[inputEmail, setInputEmail] = useState('');
     const[inputPassword, setInputPassword] = useState('');
     const[openSnackBar, setOpenSnackBar] = useState();
+    const[status, setStatus] = useState();
     const {signin} = useSelector(state => state.auth);
+    const[click, setClick] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         dispatch(login({email: inputEmail, password: inputPassword}))
-        console.log('submit');
-        setOpenSnackBar(true)
-    }
+        setClick(true)
+      }
     const handleOnchangeEmail =(e) => {
         setInputEmail(e.target.value)
     }
@@ -29,11 +30,18 @@ const SignIn = () => {
         setOpenSnackBar(false)
     }
     useEffect(() => {
-        if(signin){
+        if(signin && click){
             if(signin?.status == 200) {
                 localStorage.setItem("token", signin?.token)
                 dispatch(currentUser(signin?.token))
-                navigate("/")
+                setStatus(true)
+                setOpenSnackBar(true)
+                const timeout = setTimeout(() => {
+                    navigate("/");
+                }, 2000);
+            }else{
+                setStatus(false)
+                setOpenSnackBar(true)
             }
         }
     },[signin])
@@ -60,7 +68,7 @@ const SignIn = () => {
                         type='password' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
                     </div>
                     <div className='my-5 text-end'>
-                    <p className='text-sm '>Bạn chưa có tài khoản? <Link to="/register" className='text-sm text-green-600'>Đăng ký</Link></p>
+                    <p className='text-sm '>Bạn chưa có tài khoản? <Link to="/signup    " className='text-sm text-green-600'>Đăng ký</Link></p>
                     </div>
                     <div >
                         <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng nhập</Button>
@@ -73,7 +81,7 @@ const SignIn = () => {
             autoHideDuration={6000}
             onClose={handleSnackBarClose }
         >
-            <Alert onClose={handleSnackBarClose } severity='success' sx={{width:'100%'}}>This is success message!</Alert>
+            <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Đăng nhập thành công!':'Đăng nhập thất bại!'}</Alert>
         </Snackbar>
     </div>
   )
