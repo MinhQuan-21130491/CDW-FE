@@ -29,7 +29,6 @@ const SignIn = () => {
         setOpenSnackBar(false)
     }
     useEffect(() => {
-        console.log(signin)
         if(signin){
             if(signin?.status == 200) {
                 localStorage.setItem("token", signin?.token)

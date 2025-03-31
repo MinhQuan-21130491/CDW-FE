@@ -21,9 +21,8 @@ export default function HomePage() {
     const[content, setContent] = useState();
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
-    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
+    const dispatch = useDispatch();
     const {user} = useSelector(state => state.auth);
     const handleSearch = () => {
         
@@ -38,14 +37,6 @@ export default function HomePage() {
         setIsProfile(isShow)
         setAnchorEl(null);
     }
-
-    useEffect(() => {
-        if(!token) {
-            navigate('/signin')
-        }else {
-            dispatch(currentUser(token))
-        }
-    },[token])
     // logic xu ly 
     // const messagesWithAvatar = messages.map((message, index, arr) => {
         // const nextMessage = arr[index + 1];
@@ -78,6 +69,11 @@ export default function HomePage() {
         setIsGroup(isShow)
         setAnchorEl(null);
     }
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        dispatch(currentUser(token));
+
+    }, [])
 
   return (
     <div className='relative h-screen bg-slate-300 '>
