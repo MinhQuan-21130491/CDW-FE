@@ -15,7 +15,6 @@ export default function CreateGroup({handleNavigate}) {
   const handleRemoveMember = (member) => {
     groupMember.delete(member);
     setGroupMember(groupMember);
-    console.log("delete")
     setRender(!render);
     };
   const handleSearch = (e) => {

@@ -1,8 +1,9 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-export default function UserCard() {
+export default function UserCard({user}) {
   const navigate = useNavigate();
+  console.log(user)
   const handleNavigate = () => {
     // navigate(`/status/{userId}`)
   }
@@ -15,7 +16,7 @@ export default function UserCard() {
             />
         </div>
         <div className=' w-[70%] hidden md:block text-ellipsis overflow-hidden whitespace-nowrap'>
-            <p>Chip</p>
+            <p>{user?.full_name | "Chip"}</p>
         </div>
     </div>
   )
