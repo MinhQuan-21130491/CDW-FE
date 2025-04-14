@@ -1,7 +1,7 @@
 import { BASE_API_URL } from "../../config/api";
 
 export const createaGroupChat = (chatData) => async (dispatch) => {
-  dispatch({ type: "CREATE_CHAT_REQUEST" });
+  dispatch({ type: "CREATE_CHAT_GROUP_REQUEST" });
   try {
     const res = await fetch(`${BASE_API_URL}/api/chats/create-chat/group`, {
       method: "POST",
@@ -13,12 +13,15 @@ export const createaGroupChat = (chatData) => async (dispatch) => {
     });
     const resData = await res.json();
     if (res.ok) {
-      dispatch({ type: "CREATE_CHAT_SUCCESS", payload: resData.chat });
+      dispatch({
+        type: "CREATE_CHAT_GROUP_SUCCESS",
+        payload: { chat: resData.chat, status: resData.status },
+      });
     } else {
-      dispatch({ type: "CREATE_CHAT_FAILURE", payload: resData.message });
+      dispatch({ type: "CREATE_CHAT_GROUP_FAILURE", payload: resData.message });
     }
   } catch (err) {
-    dispatch({ type: "CREATE_CHAT_FAILURE", payload: err.message });
+    dispatch({ type: "CREATE_CHAT_GROUP_FAILURE", payload: err.message });
   }
 };
 export const getAllChat = (chatData) => async (dispatch) => {
@@ -35,6 +38,7 @@ export const getAllChat = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
+    // console.log("resData", resData);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_ALL_SUCCESS", payload: resData.chats });
     } else {
@@ -59,6 +63,7 @@ export const getChatById = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
+    console.log(resData.chat);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_BY_ID_SUCCESS", payload: resData.chat });
     } else {
@@ -69,7 +74,7 @@ export const getChatById = (chatData) => async (dispatch) => {
   }
 };
 export const getSingleChat = (chatData) => async (dispatch) => {
-  console.log(chatData);
+  // console.log(chatData);
   dispatch({ type: "GET_CHAT_SINGLE_REQUEST" });
   try {
     const res = await fetch(
@@ -83,7 +88,7 @@ export const getSingleChat = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
-    console.log("resData", resData);
+    console.log(resData.chat);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_SINGLE_SUCCESS", payload: resData.chat });
     } else {

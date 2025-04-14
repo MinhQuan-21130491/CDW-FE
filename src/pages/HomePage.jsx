@@ -16,8 +16,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
 import { searchUser } from '../redux/user/action'
 import UserCard from '../components/UserCard'
-import { sendMessage } from '../redux/message/action'
-import { getAllChat, getSingleChat } from '../redux/chat/action'
+import { sendMessage, sendMessageGroup } from '../redux/message/action'
+import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -51,15 +51,37 @@ export default function HomePage() {
         } 
         dispatch(getSingleChat(chatData))
     }
-    const handleSendMessage =() => {
-        const data = {
+    const handleSelectChatCardGroup = (group) => {
+        setCurrentChat(true);
+        setUserChatWith(group);
+        const chatData = {
             token: token,
-            messageReq: {
-                content: content,
-                receiverId: userChatWith.id,
+            chatId:  group?.chatId,
+        }
+        dispatch(getChatById(chatData))
+    }
+    const handleSendMessage =() => {
+        if(chat) {
+            if(!chat?.group) {
+                const data = {
+                    token: token,
+                    messageReq: {
+                        content: content,
+                        receiverId: userChatWith.id,
+                    }
+                }
+                dispatch(sendMessage(data))
+            }else {
+                const data = {
+                    token: token,
+                    messageReq: {
+                        content: content,
+                        chatId: userChatWith?.chatId,
+                    }
+                }
+                dispatch(sendMessageGroup(data))
             }
         }
-        dispatch(sendMessage(data))
     }
     const handleNavigateProfile = (isShow) => {
         setIsProfile(isShow)
@@ -94,9 +116,8 @@ export default function HomePage() {
         }
     }, [user, message])
     useEffect(() => {
-        // console.log("goi lai ham set")
         if(chat) {
-            console.log(chat?.userMessages)
+            console.log('render')
             const messagesWithAvatar = chat?.userMessages?.map((message, index, arr) => {
                 const nextMessage = arr[index + 1];
                 const isSameUser = nextMessage?.senderUser?.id === message.senderUser?.id;
@@ -120,11 +141,22 @@ export default function HomePage() {
     }, [chat, message])
     useEffect(() => {
         if(message && message?.status == 200) {
-            const chatData = {
-                token: token,
-                id :userChatWith.id
+            if(chat) {
+                if(!chat?.group) {
+                    const chatData = {
+                        token: token,
+                        id :userChatWith.id
+                    }
+                    dispatch(getSingleChat(chatData))
+                }else {
+                    const chatData = {
+                        token: token,
+                        chatId: userChatWith?.chatId,
+                    }
+                    dispatch(getChatById(chatData))
+                }
+               
             }
-            dispatch(getSingleChat(chatData))
         }
     }, [message])
 
@@ -197,41 +229,61 @@ export default function HomePage() {
                                 </div>
                         </div>
                         {/* Scrollable Chat List */}
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden">
                         {loading ? (
-                                <p>Loading...</p>
-                            ) : users?.length> 0 ? (
+                            <p>Loading...</p>
+                            ) : search !== '' ? (
+                            users?.length > 0 ? (
                                 <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                                   {search != '' ? (
-                                        users.map((item) => (
-                                        <div key={item.id} onClick={() => handleSelectChatCard(item)}>
-                                            <ChatCard user={item} isHide={true} />
-                                        </div>
-                                        ))
-                                    ) : (
-                                        chats && chats.map((chat, index) => {
-                                            const otherUser = chat.userChat.find(
-                                                (uc) => uc.user.id !== chat.createdBy.id
-                                              )?.user;  
-                                        return (
-                                        <div key={index} onClick={() => handleSelectChatCard(otherUser)}>
-                                            <ChatCard user={otherUser} isHide={false} time = {chat?.userMessages?.[chat?.userMessages?.length - 1]?.message?.timestamp} messageLast = {chat?.userMessages?.[chat?.userMessages?.length - 1].message.content} />
-                                        </div>
-                                        )})
-                                    )}
+                                {users.map((item) => {
+                                    if(item?.id == user?.id) return;
+                                    return (
+                                    <div key={item.id} onClick={() => handleSelectChatCard(item)}>
+                                    <ChatCard user={item} isHide={true} />
+                                    </div>
+                                )}
+                            )}
                                 </div>
-                            ) : search != '' ? (
-                                <div className='flex justify-center mt-5'>
-                                    <p className='text-sm text-gray-500'>Không có bạn bè phù hợp</p>
+                            ) : (
+                                <div className="flex justify-center mt-5">
+                                <p className="text-sm text-gray-500">Không có bạn bè phù hợp</p>
                                 </div>
-                                ): (chats && chats.map((chat, index) => {
-                                    const otherUser = chat.userChat.find(
-                                        (uc) => uc.user.id !== chat.createdBy.id
-                                      )?.user;  
-                                return (
-                                <div key={index} onClick={() => handleSelectChatCard(otherUser)}>
-                                    <ChatCard user={otherUser} isHide={false} time = {chat?.userMessages?.[chat?.userMessages?.length - 1]?.message?.timestamp} messageLast = {chat?.userMessages?.[chat?.userMessages?.length - 1].message.content} />
+                            )
+                            ) : (
+                            chats?.length > 0 ? (
+                                chats.map((chat, index) => {
+                                if (!chat.group) {
+                                    const otherUser = chat.userChat.find(uc => uc.user.id !== user?.id)?.user;
+                                    return (
+                                    <div key={chat.id || index} onClick={() => handleSelectChatCard(otherUser)}>
+                                        <ChatCard
+                                        user={otherUser}
+                                        isHide={false}
+                                        time={chat?.userMessages?.at(-1)?.message?.timestamp}
+                                        messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                        />
+                                    </div>
+                                    );
+                                } else {
+                                    const group = {
+                                    chat_name: chat?.chat_name,
+                                    chat_image: chat?.chat_image,
+                                    chatId: chat?.id,
+                                    };
+                                    return (
+                                    <div key={chat.id || index} onClick={() => handleSelectChatCardGroup(group)}>
+                                        <ChatCard group={group} isHide={false} />
+                                    </div>
+                                    );
+                                }
+                                })
+                            ) : (
+                                <div className="text-center text-sm text-gray-400 mt-4">
+                                Không có cuộc trò chuyện nào
                                 </div>
-                                )}))}
+                            )
+                        )}
+                        </div>
                     </>
                         )}
               
@@ -255,10 +307,10 @@ export default function HomePage() {
                             <div className='flex items-center justify-between p-3'>
                                 <div className='flex items-center space-x-3'>
                                     <img
-                                    src={userChatWith?.profile_picture || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s'}
+                                    src={userChatWith?.profile_picture || userChatWith?.chat_image || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s'}
                                     className='w-10 h-10 rounded-full object-cover'
                                     />
-                                    <p>{userChatWith?.full_name || 'Chip'}</p>
+                                    <p>{userChatWith?.full_name || userChatWith?.chat_name || 'Chip'}</p>
                                 </div>
                                 <div className='flex items-center space-x-3'>
                                     <AiOutlineSearch className='text-xl '/>

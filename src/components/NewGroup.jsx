@@ -1,11 +1,62 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { createaGroupChat } from '../redux/chat/action';
+import { Alert, Snackbar } from '@mui/material';
 
-function NewGroup({handleSetNewGroup}) {
-    const navigate = useNavigate();
+function NewGroup({handleSetNewGroup, members, handleNavigate}) {
+  const usersId = Array.from(members.values()).map(user => user.id);
   const [flag, setFlag] = useState(false);
-  const [groupName, setGroupName] = useState(null);
+  const [groupName, setGroupName] = useState("");
+  const {user} = useSelector(state => state.auth);
+  const [picture, setPicture] = useState('');
+  const[openSnackBar, setOpenSnackBar] = useState(false);
+  const[status, setStatus] = useState(false );
+  const {status: statusCreateGroup} = useSelector(state => state.chat)
+  const dispatch = useDispatch();
+  const token = localStorage.getItem("token");
+  const handleCreateGroup = () => {
+    const chatData = {
+      token: token,
+      data: {
+        usersId: usersId,
+        chat_name: groupName,
+        chat_image: picture,
+      }
+    }
+    dispatch(createaGroupChat(chatData));
+  }
+
+  const handleSelectPicture = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPicture(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleSnackBarClose = () => {
+    setOpenSnackBar(false)
+  }
+
+  useEffect(() => {
+        if(statusCreateGroup){
+            if(statusCreateGroup == 200) {
+                setStatus(true)
+                setOpenSnackBar(true)
+                const timeoutId = setTimeout(() => handleNavigate(false), 2000);
+          
+                // Optional: Clear timeout if component unmounts early
+                return () => clearTimeout(timeoutId);
+            }else{
+                setStatus(false)
+                setOpenSnackBar(true)
+            }
+        }
+    },[statusCreateGroup])  
   return (
     <div className=' w-full h-full bg-[#f0f2f5] '>
         <div className='pb-3 pl-3 pt-20 flex items-center space-x-4 bg-[#008069] text-white'>
@@ -13,15 +64,19 @@ function NewGroup({handleSetNewGroup}) {
             <p className='cursor-pointer font-semibold text-xl '>Nhóm chat mới</p>
         </div>
         {/* update profile pic section */}
-        <div className='flex flex-col justify-center items-center my-8'>
-          <label htmlFor='imgInput'>
-              <img 
-                src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtH3-0w5YZo8m01xHjGu3DbqJbLzjKODATcA&s'
-                className='rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer'
-              />
-          </label>
-          <input type='file' id="imgInput" className='hidden'/>
-        </div>
+        <div className="flex flex-col justify-center items-center my-8">
+        <label htmlFor="imgInput">
+          <img
+            src={
+              picture ||
+              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtH3-0w5YZo8m01xHjGu3DbqJbLzjKODATcA&s'
+            }
+            className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer"
+          />
+        </label>
+        <input type="file" id="imgInput" className="hidden" accept="image/*" onChange={handleSelectPicture} />
+      </div>
+
         {/* name section */}
         <div className='px-3 bg-white'>
             <p className='pt-3 font-semibold'>Tên nhóm chat</p>  
@@ -39,11 +94,17 @@ function NewGroup({handleSetNewGroup}) {
         <div className='fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 bg-slate-200 items-center justify-center flex text-5xl cursor-pointer'>
                 <div onClick={() => {
                 }}>
-                <BsArrowRight className='text-white font-bold  bg-[#008069] rounded-full p-1'/>
+                <BsArrowRight className='text-white font-bold  bg-[#008069] rounded-full p-1' onClick={handleCreateGroup}/>
             </div>
         </div>
         )}
-         
+      <Snackbar
+              open={openSnackBar}
+              autoHideDuration={6000}
+              onClose={handleSnackBarClose }
+            >
+                <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Tạo nhóm thành công':'Tạo nhóm thất bại'}</Alert>
+      </Snackbar>
     </div>
   )
 }

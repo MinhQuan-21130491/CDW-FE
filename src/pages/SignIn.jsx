@@ -30,21 +30,24 @@ const SignIn = () => {
         setOpenSnackBar(false)
     }
     useEffect(() => {
-        if(signin && click){
-            if(signin?.status == 200) {
-                localStorage.setItem("token", signin?.token)
-                dispatch(currentUser(signin?.token))
-                setStatus(true)
-                setOpenSnackBar(true)
-                const timeout = setTimeout(() => {
-                    navigate("/");
-                }, 2000);
-            }else{
-                setStatus(false)
-                setOpenSnackBar(true)
-            }
+        if (!click || !signin) return;
+      
+        const isSuccess = signin.status === 200;
+      
+        setStatus(isSuccess);
+        setOpenSnackBar(true);
+      
+        if (isSuccess) {
+          localStorage.setItem("token", signin.token);
+          dispatch(currentUser(signin.token));
+          const timeoutId = setTimeout(() => navigate("/"), 2000);
+          
+          // Optional: Clear timeout if component unmounts early
+          return () => clearTimeout(timeoutId);
         }
-    },[signin])
+      
+      }, [signin, click, dispatch, navigate]);
+      
   return (
     <div className='bg-[#e8e9ec]'>
         <div className='flex justify-center h-screen items-center'>
