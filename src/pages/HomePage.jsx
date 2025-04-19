@@ -7,7 +7,8 @@ import ChatCard from '../components/ChatCard'
 import { logo } from '../assets'
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import MessageCard from '../components/MessageCard'
-import { ImAttachment } from 'react-icons/im'
+import { IoIosClose } from "react-icons/io";
+import { FaImage } from "react-icons/fa";
 import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuItem } from '@mui/material'
@@ -18,10 +19,13 @@ import { searchUser } from '../redux/user/action'
 import UserCard from '../components/UserCard'
 import { sendMessage, sendMessageGroup } from '../redux/message/action'
 import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
+import EmojiPicker from "emoji-picker-react";
+import SockJS from 'sockjs-client/dist/sockjs'
+import {over} from 'stompjs'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
-    const[currentChat, setCurrentChat] = useState(false);
+    const[currentChat, setCurrentChat] = useState({show: false, chatId: ''});
     const[content, setContent] = useState('');
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
@@ -35,6 +39,71 @@ export default function HomePage() {
     const [userChatWith, setUserChatWith] = useState();
     const [messageData, setMessageData] = useState({userChat:'', userMessages:''});
     const token = localStorage.getItem('token')
+    const [showEmoji, setShowEmoji] = useState(false)
+    const [selectedImage, setSelectedImage] = useState(false);
+    const [images, setImages] = useState([]);
+    const [stompClient, setStompClient] = useState();
+    const [isConnect, setIsConnect] = useState(false);
+    //websocket
+    const connect =() => {
+        const sock = new SockJS("http://192.168.1.10:5454/ws");
+        console.log(sock)
+        const temp = over(sock);
+        setStompClient(temp);
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            "X-XSRF-TOKEN": getCookie("XSRF-TOKEN")
+        }
+
+        temp.connect(
+            headers,
+            () => {
+                console.log("✅ Connected!");
+                onConnect();
+            },
+            (error) => {
+                console.error("❌ Connection error:", error);
+            }
+        );
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if(parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
+    }
+
+    const onConnect = () => {
+        setIsConnect(true);
+    }
+
+    const onMessageRecei = (payload) =>{
+        const receivedMessage = JSON.parse(payload.body);
+        setMessageData(prevData => ({
+            ...prevData,
+            userMessages: [...prevData.userMessages, receivedMessage],
+        }));        // xử lý render lại UI list chat
+        dispatch(getAllChat({token: token, userId: user?.id}))
+
+    }
+
+    useEffect(() => {
+        if(isConnect && stompClient) {
+            // console.log("recei",currentChat.chatId.toString())
+            const subscription = stompClient.subscribe("/group/" + currentChat.chatId.toString(), onMessageRecei)
+            return () => {
+                subscription.unsubscribe();
+            }
+        }
+    },[currentChat])
+
+    useEffect(() => {
+        connect();
+    }, [])
+
     const handleSearch = (keyword) => {
         const data = {
             token: token,
@@ -42,8 +111,8 @@ export default function HomePage() {
         }
         dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
     }
-    const handleSelectChatCard = (user) => {
-        setCurrentChat(true);
+    const handleSelectChatCard = (user, chatId) => {
+        setCurrentChat({show: true, chatId: chatId});
         setUserChatWith(user)
         const chatData = {
             token: token,
@@ -52,7 +121,7 @@ export default function HomePage() {
         dispatch(getSingleChat(chatData))
     }
     const handleSelectChatCardGroup = (group) => {
-        setCurrentChat(true);
+        setCurrentChat({show: true, chatId: group?.chatId});
         setUserChatWith(group);
         const chatData = {
             token: token,
@@ -60,7 +129,41 @@ export default function HomePage() {
         }
         dispatch(getChatById(chatData))
     }
+
+        // Hàm khi người dùng chọn emoji
+    const handleEmojiSelect = (emojiData) => {
+        setContent((prevMessage) => prevMessage + emojiData.emoji); // Thêm emoji vào tin nhắn
+    };
+
+    const handleSelectPicture = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSelectedImage(true);
+            setImages(prev => [...prev, reader.result])
+          };
+          reader.readAsDataURL(file);
+        }
+    };
+    const handleRemovePicture = (pos) => {
+        const imagesNew = images.filter((el, index) => index !== pos );
+        setImages(imagesNew);
+    }
     const handleSendMessage =() => {
+        // xu li gui tin nhan riêng tư lần đầu
+        if(!chat) {
+            const data = {
+                token: token,
+                messageReq: {
+                    content: content,
+                    receiverId: userChatWith.id,
+                    type: selectedImage? 'image': 'text',
+                    medias: images,
+                }
+            }
+            dispatch(sendMessage(data))
+        }
         if(chat) {
             if(!chat?.group) {
                 const data = {
@@ -68,6 +171,8 @@ export default function HomePage() {
                     messageReq: {
                         content: content,
                         receiverId: userChatWith.id,
+                        type: selectedImage? 'image': 'text',
+                        medias: images,
                     }
                 }
                 dispatch(sendMessage(data))
@@ -77,6 +182,8 @@ export default function HomePage() {
                     messageReq: {
                         content: content,
                         chatId: userChatWith?.chatId,
+                        type: selectedImage? 'image': 'text',
+                        medias: images,
                     }
                 }
                 dispatch(sendMessageGroup(data))
@@ -116,9 +223,9 @@ export default function HomePage() {
         }
     }, [user, message])
     useEffect(() => {
-        if(chat) {
-            console.log('render')
-            const messagesWithAvatar = chat?.userMessages?.map((message, index, arr) => {
+        let messagesWithAvatar;
+        if(chat ) {
+            messagesWithAvatar = chat?.userMessages?.map((message, index, arr) => {
                 const nextMessage = arr[index + 1];
                 const isSameUser = nextMessage?.senderUser?.id === message.senderUser?.id;
               
@@ -127,18 +234,21 @@ export default function HomePage() {
                 const isTimeExceeded =
                   isSameUser &&
                   Math.abs(new Date(nextMessage?.message?.timestamp).getTime() - new Date(message?.message?.timestamp).getTime()) > 10 * 60 * 1000;
-              
                 return {
                   ...message,
                   showAvatar: isLastFromUser || isTimeExceeded,
                 };
               });
-            setMessageData({ userChat: chat?.userChat, userMessages: messagesWithAvatar,})
-        }else {
-            setMessageData({ userChat: '', userMessages:''})
-
+              if(!message) { 
+                    setMessageData({ userChat: chat?.userChat, userMessages: messagesWithAvatar,})
+              }
         }
-    }, [chat, message])
+        // send socket
+        if(message && stompClient) {
+            stompClient.send("/app/message", { "content-type": "application/json"}, JSON.stringify({...messagesWithAvatar[messagesWithAvatar?.length-1], chatId: currentChat?.chatId}))
+        }
+    }, [chat])
+    
     useEffect(() => {
         if(message && message?.status == 200) {
             if(chat) {
@@ -155,7 +265,6 @@ export default function HomePage() {
                     }
                     dispatch(getChatById(chatData))
                 }
-               
             }
         }
     }, [message])
@@ -255,12 +364,13 @@ export default function HomePage() {
                                 if (!chat.group) {
                                     const otherUser = chat.userChat.find(uc => uc.user.id !== user?.id)?.user;
                                     return (
-                                    <div key={chat.id || index} onClick={() => handleSelectChatCard(otherUser)}>
+                                    <div key={chat.id || index} onClick={() => handleSelectChatCard(otherUser, chat?.id)}>
                                         <ChatCard
-                                        user={otherUser}
-                                        isHide={false}
-                                        time={chat?.userMessages?.at(-1)?.message?.timestamp}
-                                        messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                            user={otherUser}
+                                            isHide={false}
+                                            time={chat?.userMessages?.at(-1)?.message?.timestamp}
+                                            messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                            isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
                                         />
                                     </div>
                                     );
@@ -272,25 +382,29 @@ export default function HomePage() {
                                     };
                                     return (
                                     <div key={chat.id || index} onClick={() => handleSelectChatCardGroup(group)}>
-                                        <ChatCard group={group} isHide={false} />
+                                        <ChatCard group={group}
+                                                 isHide={false}
+                                                 time={chat?.userMessages?.at(-1)?.message?.timestamp}
+                                                 messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                                 isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
+                                                 />
                                     </div>
                                     );
                                 }
                                 })
                             ) : (
                                 <div className="text-center text-sm text-gray-400 mt-4">
-                                Không có cuộc trò chuyện nào
+                                Bắt đầu trò chuyện với bạn bè!
                                 </div>
                             )
                         )}
                         </div>
                     </>
                         )}
-              
             </div>
-            <div  className='right flex-1'>
+            <div  className='right flex-1 flex flex-col overflow-hidden'>
                 {/* Default page */}
-                { !currentChat && <div className='flex flex-col h-full items-center justify-center'>
+                { !currentChat?.show && <div className='flex flex-col h-full items-center justify-center'>
                     <div className='max-w-[70%] text-center '>
                         <img 
                         src={logo}
@@ -301,8 +415,8 @@ export default function HomePage() {
                 </div>
                 }  
                 {/* Message part */}
-                {currentChat &&
-                    <div className='relative h-full' >
+                {currentChat?.show &&
+                    <div className='relative h-full w-full' >
                         <div className='header absolute top-0 w-full bg-[#f0f2f5] z-50'>
                             <div className='flex items-center justify-between p-3'>
                                 <div className='flex items-center space-x-3'>
@@ -319,42 +433,76 @@ export default function HomePage() {
                             </div>
                         </div>
                         {/* Message section */}
-                        <div className='bg-blue-200 h-full overflow-y-scroll'>
+                        <div className='bg-blue-200 h-full w-full overflow-y-scroll'>
                             <div className='py-20 pl-10 pr-4 space-y-2 flex flex-col justify-center '>
-                                {messageData.userMessages && messageData.userMessages.map((item, index) => (
-                                <MessageCard
-                                    key={index}
-                                    showAvatar={item.showAvatar}
-                                    isReceiUserMessage={item?.senderUser?.id !== user.id}
-                                    content={item.message.content}
-                                    time={item.message.timestamp}
-                                    avatar={item?.senderUser?.profile_picture}
-                                />
-                                ))}
+                                {messageData.userMessages && messageData.userMessages.map((item, index) => {
+                                return (
+                                    <MessageCard
+                                        key={index}
+                                        showAvatar={item.showAvatar}
+                                        isReceiUserMessage={item?.senderUser?.id !== user.id}
+                                        content={item?.message?.content}
+                                        time={item?.message?.timestamp}
+                                        avatar={item?.senderUser?.profile_picture}
+                                        type = {item?.message?.type}
+                                        images = {item?.message?.medias}
+                                    />
+                                )})}
                                 {/* Phần tử đánh dấu cuối danh sách */}
                                 <div ref={bottomRef}></div>
                             </div>
                         </div>
-                        {/* footer part */}
-                        <div className='footer bg-[#f0f2f5] absolute bottom-0 w-full flex justify-between items-center p-3 z-50'>
-                            <div className='flex space-x-6'>
-                                <BsEmojiSmile className='cursor-pointer text-2xl' />
-                                <ImAttachment className='cursor-pointer text-2xl'/>
+                        {/* Emoji */}
+                        {showEmoji && (
+                            <div className='absolute top-28 -left-5'>
+                                <EmojiPicker onEmojiClick={handleEmojiSelect} />
                             </div>
-                            <input 
-                                className='py-2 outline-none border-none bg-white pl-4 rounded-lg w-[85%]' 
-                                type='text' 
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder='Nhập tin nhắn...'
-                                value={content}
-                                onKeyPress={(e) => {
-                                    if(e.key == "Enter") {
-                                        handleSendMessage();
-                                        setContent('');
-                                    }
-                                } }
-                            />
-                            <BsMicFill className='cursor-pointer text-2xl'/>
+                        )}
+                        {/* footer part */}
+                        <div className='footer bg-[#f0f2f5] absolute bottom-0 w-full'>
+                             {/* show image khi chon */}
+                            <div className='ml-28 flex space-x-2'>
+                                {images && images?.map((item, index) => {
+                                    return (
+                                        <div className='relative mt-3'>
+                                            <IoIosClose className='absolute -right-2 -top-2 text-xl cursor-pointer' onClick={() => handleRemovePicture(index)}/>
+                                            <img src ={item}
+                                                width={100} 
+                                                height={100}
+                                                className='rounded-md object-cover border cursor-pointer'
+                                            />     
+                                        </div>
+                                    );
+                                    })
+                                }
+                            </div>
+                            <div className=' flex justify-between items-center p-3 z-50'>
+                                <div className='flex space-x-6'>
+                                    <BsEmojiSmile className='cursor-pointer text-2xl' onClick={() => setShowEmoji(!showEmoji)}/>
+                                    <div>
+                                        <label htmlFor='imgInput'>
+                                            <FaImage  className='cursor-pointer text-2xl'/>
+                                        </label>
+                                        <input type="file" id="imgInput" className="hidden" accept="image/*" onChange={handleSelectPicture} />
+                                    </div>
+                                </div>
+                                <input 
+                                    className='py-2 outline-none border-none bg-white    rounded-lg w-[85%]' 
+                                    type='text' 
+                                    onChange={(e) => setContent(e.target.value)}
+                                    placeholder='Nhập tin nhắn...'
+                                    value={content}
+                                    onKeyPress={(e) => {
+                                        if(e.key == "Enter") {
+                                            handleSendMessage();
+                                            setContent('');
+                                            setImages([]);
+                                            setSelectedImage(false);
+                                        }
+                                    } }
+                                />
+                                <BsMicFill className='cursor-pointer text-2xl'/>
+                            </div>
                         </div>
                     </div>
                 }

@@ -22,7 +22,6 @@ export const sendMessage = (data) => async (dispatch) => {
   }
 };
 export const sendMessageGroup = (data) => async (dispatch) => {
-  console.log(data);
   dispatch({ type: "SEND_MESSAGE_GROUP_REQUEST" });
   try {
     const res = await fetch(`${BASE_API_URL}/api/messages/create/group`, {

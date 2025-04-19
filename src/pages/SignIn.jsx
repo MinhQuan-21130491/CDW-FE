@@ -40,7 +40,7 @@ const SignIn = () => {
         if (isSuccess) {
           localStorage.setItem("token", signin.token);
           dispatch(currentUser(signin.token));
-          const timeoutId = setTimeout(() => navigate("/"), 2000);
+          const timeoutId = setTimeout(() =>  navigate("/", { replace: true }), 2000);
           
           // Optional: Clear timeout if component unmounts early
           return () => clearTimeout(timeoutId);

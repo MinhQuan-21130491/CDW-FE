@@ -38,7 +38,7 @@ export const getAllChat = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
-    // console.log("resData", resData);
+    console.log("request", resData);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_ALL_SUCCESS", payload: resData.chats });
     } else {
