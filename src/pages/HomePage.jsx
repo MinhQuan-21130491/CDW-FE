@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AiOutlineSearch } from 'react-icons/ai'
 import { BiCommentDetail } from 'react-icons/bi'
 import { BsEmojiSmile, BsFilter, BsMicFill, BsThreeDotsVertical } from 'react-icons/bs'
@@ -7,56 +7,240 @@ import ChatCard from '../components/ChatCard'
 import { logo } from '../assets'
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import MessageCard from '../components/MessageCard'
-import { ImAttachment } from 'react-icons/im'
+import { IoIosClose } from "react-icons/io";
+import { FaImage } from "react-icons/fa";
 import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Menu, MenuItem } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
 import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
+import { searchUser } from '../redux/user/action'
+import UserCard from '../components/UserCard'
+import { sendMessage, sendMessageGroup } from '../redux/message/action'
+import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
+import EmojiPicker from "emoji-picker-react";
+import SockJS from 'sockjs-client/dist/sockjs'
+import {over} from 'stompjs'
 
 export default function HomePage() {
-    const[search, setSearch] = useState();
-    const[currentChat, setCurrentChat] = useState(false);
-    const[content, setContent] = useState();
+    const[search, setSearch] = useState('');
+    const[currentChat, setCurrentChat] = useState({show: false, chatId: ''});
+    const[content, setContent] = useState('');
     const [isProfile, setIsProfile] = useState();
     const [isGroup, setIsGroup] = useState();
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const {user} = useSelector(state => state.auth);
-    const handleSearch = () => {
-        
+    const { users, error, loading } = useSelector(state => state.user);
+    const { response:message, error: errorMsg, loading: loadingMsg } = useSelector(state => state.message);
+    const { chat, error: errorChat, loading: loadingChat } = useSelector(state => state.chat);
+    const { chats, error: errorChats, loading: loadingChats } = useSelector(state => state.chat);
+    const [userChatWith, setUserChatWith] = useState();
+    const [messageData, setMessageData] = useState({userChat:'', userMessages:''});
+    const token = localStorage.getItem('token')
+    const [showEmoji, setShowEmoji] = useState(false)
+    const [selectedImage, setSelectedImage] = useState(false);
+    const [images, setImages] = useState([]);
+    const [stompClient, setStompClient] = useState();
+    const [isConnect, setIsConnect] = useState(false);
+    const [firstChat, setFirstChat] = useState(false);
+    const [isSelectUserSearch, setIsSelectUserSearch] = useState(false);
+    const [isOpenChatFirst, setIsOpenChatFirst] = useState(false);
+    const [isSend, setIsSend] = useState(false);
+    //websocket
+    
+
+    // xử lý render lại UI list chat
+    function onReceiNewMessage(payload) {
+        const noti = payload.body;
+        if(noti === 'New message') {
+            dispatch(getAllChat({token: token, userId: user?.id}))
+        }
     }
-    const handleSelectChatCard = () => {
-        setCurrentChat(true);
+
+    const connect =() => {
+        const sock = new SockJS("http://192.168.1.10:5454/ws");
+        const temp = over(sock);
+       
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            "X-XSRF-TOKEN": getCookie("XSRF-TOKEN")
+        }
+        temp.connect(
+            headers,
+            () => {
+                console.log("✅ Connected!");
+                onConnect();
+                temp?.subscribe("/topic/notification/", onReceiNewMessage)
+            },
+            (error) => {
+                console.error("❌ Connection error:", error);
+            }
+        );
+        setStompClient(temp);
+    }
+
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if(parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
+    }
+
+    const onConnect = () => {
+       
+        setIsConnect(true);
+    }
+
+    const onMessageRecei = (payload) =>{
+        const receivedMessage = JSON.parse(payload.body);
+        setMessageData(prevData => ({
+            ...prevData,
+            userMessages: [...prevData.userMessages, receivedMessage],
+        }));        
+        // dispatch(getAllChat({token: token, userId: user?.id}))
+    }
+
+    //subscribe phòng chat để nhận tin nhắn
+    useEffect(() => {
+        if(currentChat.chatId && isConnect && stompClient) {
+            const subscription = stompClient.subscribe("/group/" + currentChat?.chatId?.toString(), onMessageRecei)
+            return () => {
+                subscription.unsubscribe();
+            }
+        }
+    },[currentChat])
+
+    // mở connect socket
+    useEffect(() => {
+        connect();
+    }, [])
+
+    const handleSearch = (keyword) => {
+        const data = {
+            token: token,
+            query: keyword
+        }
+        dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
+    }
+    const handleSelectUser = (userChatWith) => {
+        setCurrentChat({show: true});
+        setUserChatWith(userChatWith)
+        const chatData = {
+            token: token,
+            id :userChatWith.id
+        } 
+        dispatch(getSingleChat(chatData))
+        // xử lý với trường hợp là mở chat room trong lúc tìm kiếm
+        setIsSelectUserSearch(true);
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
+
+        setMessageData({userChat:'', userMessages:''});
+    }
+    const handleSelectChatCard = (userChatWith, chatId) => {
+        setCurrentChat({show: true, chatId: chatId});
+        setUserChatWith(userChatWith)
+        const chatData = {
+            token: token,
+            id :userChatWith.id
+        } 
+        dispatch(getSingleChat(chatData))
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
+    }
+    const handleSelectChatCardGroup = (group) => {
+        setCurrentChat({show: true, chatId: group?.chatId});
+        setUserChatWith(group);
+        const chatData = {
+            token: token,
+            chatId:  group?.chatId,
+        }
+        dispatch(getChatById(chatData))
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
+    }
+
+        // Hàm khi người dùng chọn emoji
+    const handleEmojiSelect = (emojiData) => {
+        setContent((prevMessage) => prevMessage + emojiData.emoji); // Thêm emoji vào tin nhắn
+    };
+
+    const handleSelectPicture = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSelectedImage(true);
+            setImages(prev => [...prev, reader.result])
+          };
+          reader.readAsDataURL(file);
+        }
+    };
+    const handleRemovePicture = (pos) => {
+        const imagesNew = images.filter((el, index) => index !== pos );
+        setImages(imagesNew);
     }
     const handleSendMessage =() => {
-
+        // xu li gui tin nhan riêng tư lần đầu
+        if(!chat) {
+            const data = {
+                token: token,
+                messageReq: {
+                    content: content,
+                    receiverId: userChatWith.id,
+                    type: selectedImage? 'image': 'text',
+                    medias: images,
+                }
+            }
+            // setFirstChat(true)
+            dispatch(sendMessage(data))
+            setIsSend(true);
+            setIsOpenChatFirst(false);
+        }   
+        if(chat) {
+            if(!chat?.group) {
+                const data = {
+                    token: token,
+                    messageReq: {
+                        content: content,
+                        receiverId: userChatWith.id,
+                        type: selectedImage? 'image': 'text',
+                        medias: images,
+                    }
+                }
+                dispatch(sendMessage(data))
+                setIsSend(true);
+            }else {
+                const data = {
+                    token: token,
+                    messageReq: {
+                        content: content,
+                        chatId: userChatWith?.chatId,
+                        type: selectedImage? 'image': 'text',
+                        medias: images,
+                    }
+                }
+                dispatch(sendMessageGroup(data))
+                setIsSend(true);
+            }
+        }
     }
     const handleNavigateProfile = (isShow) => {
         setIsProfile(isShow)
         setAnchorEl(null);
     }
-    // logic xu ly 
-    // const messagesWithAvatar = messages.map((message, index, arr) => {
-        // const nextMessage = arr[index + 1];
-    //     // Kiểm tra tin nhắn tiếp theo
-    //     const isLastFromUser = index === arr.length - 1 || arr[index + 1].userId !== message.userId;
-            // const isTimeExceeded = nextMessage && nextMessage.userId === message.userId
-            // ? Math.abs(new Date(nextMessage.time) - new Date(message.time)) > 10 * 60 * 1000 // Cách nhau hơn 10 phút
-            // : false;
-
-    //     return {
-    //       ...message,
-    //       showAvatar: isLastFromUser || isTimeExceeded// Avatar chỉ hiện nếu là tin cuối từ user
-    //     };
-    //   });
-    const messages = [
-        { id: 1, userId: 'user1', text: 'Hello!', showAvatar: false },
-        { id: 2, userId: 'user1', text: 'How are you?', showAvatar: false },
-        { id: 3, userId: 'user1', text: 'What’s up?', showAvatar: true }, // Cuối cùng từ user1
-        { id: 4, userId: 'user2', text: 'Hi!', showAvatar: true } // user2 chỉ gửi một tin
-      ];
+   
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
     const handleClick = (event) => {
@@ -74,15 +258,79 @@ export default function HomePage() {
         setAnchorEl(null);
     };
     const handleUserUpdate = () => {
-        const token = localStorage.getItem('token');
         dispatch(currentUser(token));
     };
-
     useEffect(() => {
-        const token = localStorage.getItem('token');
         dispatch(currentUser(token));
     }, [])
+    useEffect(() => {
+        if(user) {
+            dispatch(getAllChat({token: token, userId: user?.id}))
+        }
+    }, [user, message])
+    useEffect(() => {
+        let messagesWithAvatar;
+        if(chat) {
+            messagesWithAvatar = chat?.userMessages?.map((message, index, arr) => {
+                const nextMessage = arr[index + 1];
+                const isSameUser = nextMessage?.senderUser?.id === message.senderUser?.id;
+              
+                const isLastFromUser = !isSameUser;
+              
+                const isTimeExceeded =
+                  isSameUser &&
+                  Math.abs(new Date(nextMessage?.message?.timestamp).getTime() - new Date(message?.message?.timestamp).getTime()) > 10 * 60 * 1000;
+                return {
+                  ...message,
+                  showAvatar: isLastFromUser || isTimeExceeded,
+                };
+              });
+              if(isOpenChatFirst) { 
+                    setMessageData({ userChat: chat?.userChat, userMessages: messagesWithAvatar,})
+                    setIsOpenChatFirst(false);
+              }
+        }
+        // send socket
+        if(message && stompClient && isSend) {
+            stompClient.send("/app/message", { "content-type": "application/json"}, JSON.stringify({...messagesWithAvatar[messagesWithAvatar?.length-1], chatId: currentChat?.chatId}))
+        }
+    }, [chat])
 
+    useEffect(() => {
+        if(isSelectUserSearch && chat) {
+            setIsSelectUserSearch(false);
+            setCurrentChat({show: true, chatId: chat?.id});
+            const chatData = {
+                token: token,
+                id :userChatWith.id
+            } 
+            dispatch(getSingleChat(chatData))
+        }
+    }, [chat])
+    
+    useEffect(() => {
+        if(message && message?.status == 200) {
+                if(!chat?.group) {
+                    const chatData = {
+                        token: token,
+                        id :userChatWith.id
+                    }
+                    dispatch(getSingleChat(chatData))
+                }else {
+                    const chatData = {
+                        token: token,
+                        chatId: userChatWith?.chatId,
+                    }
+                    dispatch(getChatById(chatData))
+                }
+        }
+    }, [message])
+
+    const bottomRef = useRef(null);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messageData.userMessages]);
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -147,36 +395,93 @@ export default function HomePage() {
                                 </div>
                         </div>
                         {/* Scrollable Chat List */}
-                        <div className='flex-1 overflow-y-auto overflow-x-hidden'>
-                                {search && [1,1,1,1,1,1,1,1,1,1].map((item) => <div onClick={handleSelectChatCard}><ChatCard/></div>)}
+                        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                        {loading ? (
+                            <p>Loading...</p>
+                            ) : search !== '' ? (
+                            users?.length > 0 ? (
+                                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                                {users.map((item) => {
+                                    if(item?.id == user?.id) return;
+                                    return (
+                                    <div key={item.id} onClick={() => handleSelectUser(item)}>
+                                    <ChatCard user={item} isHide={true} />
+                                    </div>
+                                )}
+                            )}
+                                </div>
+                            ) : (
+                                <div className="flex justify-center mt-5">
+                                <p className="text-sm text-gray-500">Không có bạn bè phù hợp</p>
+                                </div>
+                            )
+                            ) : (
+                            chats?.length > 0 ? (
+                                chats.map((chat, index) => {
+                                if (!chat.group) {
+                                    const otherUser = chat.userChat.find(uc => uc.user.id !== user?.id)?.user;
+                                    return (
+                                    <div key={chat.id || index} onClick={() => handleSelectChatCard(otherUser, chat?.id)}>
+                                        <ChatCard
+                                            user={otherUser}
+                                            isHide={false}
+                                            time={chat?.userMessages?.at(-1)?.message?.timestamp}
+                                            messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                            isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
+                                        />
+                                    </div>
+                                    );
+                                } else {
+                                    const group = {
+                                    chat_name: chat?.chat_name,
+                                    chat_image: chat?.chat_image,
+                                    chatId: chat?.id,
+                                    };
+                                    return (
+                                    <div key={chat.id || index} onClick={() => handleSelectChatCardGroup(group)}>
+                                        <ChatCard group={group}
+                                                 isHide={false}
+                                                 time={chat?.userMessages?.at(-1)?.message?.timestamp}
+                                                 messageLast={chat?.userMessages?.at(-1)?.message?.content}
+                                                 isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
+                                                 />
+                                    </div>
+                                    );
+                                }
+                                })
+                            ) : (
+                                <div className="text-center text-sm text-gray-400 mt-4">
+                                Bắt đầu trò chuyện với bạn bè!
+                                </div>
+                            )
+                        )}
                         </div>
                     </>
                         )}
-              
             </div>
-            <div  className='right flex-1'>
+            <div  className='right flex-1 flex flex-col overflow-hidden'>
                 {/* Default page */}
-                { !currentChat && <div className='flex flex-col h-full items-center justify-center'>
+                { !currentChat?.show && <div className='flex flex-col h-full items-center justify-center'>
                     <div className='max-w-[70%] text-center '>
                         <img 
                         src={logo}
                         className='object-cover'
                         />
-                        <h1 className='text-3xl text-gray-600'>WhatsApp Web</h1>
+                        <h1 className='text-2xl text-gray-600'>Trò chuyện trực tuyến mọi lúc, mọi nơi.</h1>
                     </div>
                 </div>
                 }  
                 {/* Message part */}
-                {currentChat &&
-                    <div className='relative h-full' >
+                {currentChat?.show &&
+                    <div className='relative h-full w-full' >
                         <div className='header absolute top-0 w-full bg-[#f0f2f5] z-50'>
                             <div className='flex items-center justify-between p-3'>
                                 <div className='flex items-center space-x-3'>
                                     <img
-                                    src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s'
+                                    src={userChatWith?.profile_picture || userChatWith?.chat_image || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s'}
                                     className='w-10 h-10 rounded-full object-cover'
                                     />
-                                    <p>Chip</p>
+                                    <p>{userChatWith?.full_name || userChatWith?.chat_name || 'Chip'}</p>
                                 </div>
                                 <div className='flex items-center space-x-3'>
                                     <AiOutlineSearch className='text-xl '/>
@@ -185,31 +490,76 @@ export default function HomePage() {
                             </div>
                         </div>
                         {/* Message section */}
-                        <div className='bg-blue-200 h-full overflow-y-scroll'>
-                            <div className='py-20 pl-10 pr-4 space-y-2 flex flex-col justify-center border '>
-                                {messages && messages.map((item, index) => <MessageCard key = {index} showAvatar = {item.showAvatar} isReceiUserMessage={item.userId === 'user1'} content = {item.text} />)}
+                        <div className='bg-blue-200 h-full w-full overflow-y-scroll'>
+                            <div className='py-20 pl-10 pr-4 space-y-2 flex flex-col justify-center '>
+                                {messageData.userMessages && messageData.userMessages.map((item, index) => {
+                                return (
+                                    <MessageCard
+                                        key={index}
+                                        showAvatar={item.showAvatar}
+                                        isReceiUserMessage={item?.senderUser?.id !== user.id}
+                                        content={item?.message?.content}
+                                        time={item?.message?.timestamp}
+                                        avatar={item?.senderUser?.profile_picture}
+                                        type = {item?.message?.type}
+                                        images = {item?.message?.medias}
+                                    />
+                                )})}
+                                {/* Phần tử đánh dấu cuối danh sách */}
+                                <div ref={bottomRef}></div>
                             </div>
                         </div>
-                        {/* footer part */}
-                        <div className='footer bg-[#f0f2f5] absolute bottom-0 w-full flex justify-between items-center p-3 z-50'>
-                            <div className='flex space-x-6'>
-                                <BsEmojiSmile className='cursor-pointer text-2xl' />
-                                <ImAttachment className='cursor-pointer text-2xl'/>
+                        {/* Emoji */}
+                        {showEmoji && (
+                            <div className='absolute top-28 -left-5'>
+                                <EmojiPicker onEmojiClick={handleEmojiSelect} />
                             </div>
-                            <input 
-                                className='py-2 outline-none border-none bg-white pl-4 rounded-lg w-[85%]' 
-                                type='text' 
-                                onChange={(e) => setContent(e.target.value)}
-                                placeholder='Nhập tin nhắn...'
-                                value={content}
-                                onKeyPress={(e) => {
-                                    if(e.key = "Enter") {
-                                        handleSendMessage();
-                                        setContent('');
-                                    }
-                                } }
-                            />
-                            <BsMicFill className='cursor-pointer text-2xl'/>
+                        )}
+                        {/* footer part */}
+                        <div className='footer bg-[#f0f2f5] absolute bottom-0 w-full'>
+                             {/* show image khi chon */}
+                            <div className='ml-28 flex space-x-2'>
+                                {images && images?.map((item, index) => {
+                                    return (
+                                        <div className='relative mt-3'>
+                                            <IoIosClose className='absolute -right-2 -top-2 text-xl cursor-pointer' onClick={() => handleRemovePicture(index)}/>
+                                            <img src ={item}
+                                                width={100} 
+                                                height={100}
+                                                className='rounded-md object-cover border cursor-pointer'
+                                            />     
+                                        </div>
+                                    );
+                                    })
+                                }
+                            </div>
+                            <div className=' flex justify-between items-center p-3 z-50'>
+                                <div className='flex space-x-6'>
+                                    <BsEmojiSmile className='cursor-pointer text-2xl' onClick={() => setShowEmoji(!showEmoji)}/>
+                                    <div>
+                                        <label htmlFor='imgInput'>
+                                            <FaImage  className='cursor-pointer text-2xl'/>
+                                        </label>
+                                        <input type="file" id="imgInput" className="hidden" accept="image/*" onChange={handleSelectPicture} />
+                                    </div>
+                                </div>
+                                <input 
+                                    className='py-2 px-2 outline-none border-none bg-white rounded-lg w-[85%]' 
+                                    type='text' 
+                                    onChange={(e) => setContent(e.target.value)}
+                                    placeholder='Nhập tin nhắn...'
+                                    value={content}
+                                    onKeyPress={(e) => {
+                                        if(e.key == "Enter") {
+                                            handleSendMessage();
+                                            setContent('');
+                                            setImages([]);
+                                            setSelectedImage(false);
+                                        }
+                                    } }
+                                />
+                                <BsMicFill className='cursor-pointer text-2xl'/>
+                            </div>
                         </div>
                     </div>
                 }

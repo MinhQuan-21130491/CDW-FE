@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react'
+import React, { memo, useEffect, useState } from 'react'
 import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs'
 import { SelectedMember } from './SelectedMember';
 import { AiOutlineSearch } from 'react-icons/ai';
@@ -6,30 +6,48 @@ import ChatCard from './ChatCard';
 import StatusUserCard from './StatusUserCard';
 import UserCard from './UserCard';
 import NewGroup from './NewGroup';
+import { useDispatch, useSelector } from 'react-redux';
+import { searchUser } from '../redux/user/action';
 
 export default function CreateGroup({handleNavigate}) {
   const[newGroup, setNewGroup] = useState(false);
-  const[groupMember, setGroupMember] = useState(new Set());
+  const [groupMember, setGroupMember] = useState(new Map());
   const[search, setSearch] = useState("");
   const[render, setRender] = useState(false);
+  const token = localStorage.getItem("token");
+  const { users, error, loading } = useSelector(state => state.user);
+  const {user} = useSelector(state => state.auth);
+  const dispatch = useDispatch();
   const handleRemoveMember = (member) => {
-    groupMember.delete(member);
-    setGroupMember(groupMember);
-    console.log("delete")
+    setGroupMember(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(member?.email);
+      return newMap;
+    });
     setRender(!render);
-    };
-  const handleSearch = (e) => {
+  };
+    const handleSearch = (keyword) => {
+          const data = {
+              token: token,
+              query: keyword
+          }
+          dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
+      }
 
-  }
-  const handleAddMember = (member) => {
-    groupMember.add(member);
-    setGroupMember(groupMember);
-    setSearch("");
-  }
+    const handleAddMember = (user) => {
+      setGroupMember(prev => {
+        const newMap = new Map(prev);
+        newMap.set(user.email, user); // nếu trùng email thì ghi đè
+        return newMap;
+      });
+      setSearch("");
+    };  
+      
+      
   const handleSetNewGroup = (isNewGroup) => {
     setNewGroup(isNewGroup);
-    console.log("back")
   }
+
   return (
     <>
       {!newGroup && (
@@ -40,7 +58,7 @@ export default function CreateGroup({handleNavigate}) {
           </div>
           <div className='relative bg-white pt-4'>
             <div className='flex space-x-2 flex-wrap'> 
-                {groupMember.size > 0 && Array.from(groupMember).map((item, index) => <SelectedMember key={index} handleRemoveMemner={() => handleRemoveMember(item)} member={item} /> )}
+                {groupMember.size > 0 && Array.from(groupMember.values()).map((item, index) => <SelectedMember key={index} handleRemoveMemner={() => handleRemoveMember(item)} member={item} /> )}
             </div>
             <div className='relative flex justify-center items-center bg-white space-x-2'>
               <input 
@@ -48,7 +66,8 @@ export default function CreateGroup({handleNavigate}) {
                 type='text'
                 placeholder='Tìm kiếm bạn bè'
                 onChange={(e) => {
-                setSearch(e.target.value)
+                    setSearch(e.target.value)
+                    handleSearch(e.target.value)
                 }}
                 value = {search}
                 />
@@ -56,9 +75,15 @@ export default function CreateGroup({handleNavigate}) {
             </div>
           </div>
           <div className='overflow-y-auto overflow-x-hidden mt-4 px-2 '>
-            {search && [1,2,3,4,5,6,1,1,1,1].map((item, index) => <div key={index} onClick={() => handleAddMember(item)}><hr className={index !== 0 ?`mt-2`:''}/><UserCard/></div>)}
+            {search && users.map((item, index) =>
+              {
+                if(item?.id == user?.id) return;
+                return (
+                  <div key={index} onClick={() => handleAddMember(item)}><hr className={index !== 0 ?`mt-2`:''}/><UserCard user={item}/></div>)}
+                )
+              }
           </div>
-          {groupMember.size > 0 && search === '' && 
+          {groupMember.size > 1 && search === '' && 
             <div className='fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 bg-slate-200 items-center justify-center flex text-5xl cursor-pointer'>
                 <div onClick={() => {
                  handleSetNewGroup(true);
@@ -70,7 +95,7 @@ export default function CreateGroup({handleNavigate}) {
           
         </>
       )}
-      {newGroup && <NewGroup handleSetNewGroup = {handleSetNewGroup}/>}
+      {newGroup && <NewGroup handleSetNewGroup = {handleSetNewGroup} members = {groupMember} handleNavigate = {handleNavigate}/>}
   </>
   );
 }
