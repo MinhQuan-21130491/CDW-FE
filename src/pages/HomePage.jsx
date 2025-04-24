@@ -44,29 +44,44 @@ export default function HomePage() {
     const [images, setImages] = useState([]);
     const [stompClient, setStompClient] = useState();
     const [isConnect, setIsConnect] = useState(false);
+    const [firstChat, setFirstChat] = useState(false);
+    const [isSelectUserSearch, setIsSelectUserSearch] = useState(false);
+    const [isOpenChatFirst, setIsOpenChatFirst] = useState(false);
+    const [isSend, setIsSend] = useState(false);
     //websocket
+    
+
+    // xử lý render lại UI list chat
+    function onReceiNewMessage(payload) {
+        const noti = payload.body;
+        if(noti === 'New message') {
+            dispatch(getAllChat({token: token, userId: user?.id}))
+        }
+    }
+
     const connect =() => {
         const sock = new SockJS("http://192.168.1.10:5454/ws");
-        console.log(sock)
         const temp = over(sock);
-        setStompClient(temp);
+       
 
         const headers = {
             Authorization: `Bearer ${token}`,
             "X-XSRF-TOKEN": getCookie("XSRF-TOKEN")
         }
-
         temp.connect(
             headers,
             () => {
                 console.log("✅ Connected!");
                 onConnect();
+                temp?.subscribe("/topic/notification/", onReceiNewMessage)
             },
             (error) => {
                 console.error("❌ Connection error:", error);
             }
         );
+        setStompClient(temp);
     }
+
 
     function getCookie(name) {
         const value = `; ${document.cookie}`;
@@ -77,6 +92,7 @@ export default function HomePage() {
     }
 
     const onConnect = () => {
+       
         setIsConnect(true);
     }
 
@@ -85,21 +101,21 @@ export default function HomePage() {
         setMessageData(prevData => ({
             ...prevData,
             userMessages: [...prevData.userMessages, receivedMessage],
-        }));        // xử lý render lại UI list chat
-        dispatch(getAllChat({token: token, userId: user?.id}))
-
+        }));        
+        // dispatch(getAllChat({token: token, userId: user?.id}))
     }
 
+    //subscribe phòng chat để nhận tin nhắn
     useEffect(() => {
-        if(isConnect && stompClient) {
-            // console.log("recei",currentChat.chatId.toString())
-            const subscription = stompClient.subscribe("/group/" + currentChat.chatId.toString(), onMessageRecei)
+        if(currentChat.chatId && isConnect && stompClient) {
+            const subscription = stompClient.subscribe("/group/" + currentChat?.chatId?.toString(), onMessageRecei)
             return () => {
                 subscription.unsubscribe();
             }
         }
     },[currentChat])
 
+    // mở connect socket
     useEffect(() => {
         connect();
     }, [])
@@ -111,14 +127,35 @@ export default function HomePage() {
         }
         dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
     }
-    const handleSelectChatCard = (user, chatId) => {
-        setCurrentChat({show: true, chatId: chatId});
-        setUserChatWith(user)
+    const handleSelectUser = (userChatWith) => {
+        setCurrentChat({show: true});
+        setUserChatWith(userChatWith)
         const chatData = {
             token: token,
-            id :user.id
+            id :userChatWith.id
         } 
         dispatch(getSingleChat(chatData))
+        // xử lý với trường hợp là mở chat room trong lúc tìm kiếm
+        setIsSelectUserSearch(true);
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
+
+        setMessageData({userChat:'', userMessages:''});
+    }
+    const handleSelectChatCard = (userChatWith, chatId) => {
+        setCurrentChat({show: true, chatId: chatId});
+        setUserChatWith(userChatWith)
+        const chatData = {
+            token: token,
+            id :userChatWith.id
+        } 
+        dispatch(getSingleChat(chatData))
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
     }
     const handleSelectChatCardGroup = (group) => {
         setCurrentChat({show: true, chatId: group?.chatId});
@@ -128,6 +165,10 @@ export default function HomePage() {
             chatId:  group?.chatId,
         }
         dispatch(getChatById(chatData))
+        // chỉ load tin nhắn khi mở chat room lần đầu
+        setIsOpenChatFirst(true);
+        // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
+        setIsSend(false);
     }
 
         // Hàm khi người dùng chọn emoji
@@ -162,8 +203,11 @@ export default function HomePage() {
                     medias: images,
                 }
             }
+            // setFirstChat(true)
             dispatch(sendMessage(data))
-        }
+            setIsSend(true);
+            setIsOpenChatFirst(false);
+        }   
         if(chat) {
             if(!chat?.group) {
                 const data = {
@@ -176,6 +220,7 @@ export default function HomePage() {
                     }
                 }
                 dispatch(sendMessage(data))
+                setIsSend(true);
             }else {
                 const data = {
                     token: token,
@@ -187,6 +232,7 @@ export default function HomePage() {
                     }
                 }
                 dispatch(sendMessageGroup(data))
+                setIsSend(true);
             }
         }
     }
@@ -224,7 +270,7 @@ export default function HomePage() {
     }, [user, message])
     useEffect(() => {
         let messagesWithAvatar;
-        if(chat ) {
+        if(chat) {
             messagesWithAvatar = chat?.userMessages?.map((message, index, arr) => {
                 const nextMessage = arr[index + 1];
                 const isSameUser = nextMessage?.senderUser?.id === message.senderUser?.id;
@@ -239,19 +285,31 @@ export default function HomePage() {
                   showAvatar: isLastFromUser || isTimeExceeded,
                 };
               });
-              if(!message) { 
+              if(isOpenChatFirst) { 
                     setMessageData({ userChat: chat?.userChat, userMessages: messagesWithAvatar,})
+                    setIsOpenChatFirst(false);
               }
         }
         // send socket
-        if(message && stompClient) {
+        if(message && stompClient && isSend) {
             stompClient.send("/app/message", { "content-type": "application/json"}, JSON.stringify({...messagesWithAvatar[messagesWithAvatar?.length-1], chatId: currentChat?.chatId}))
+        }
+    }, [chat])
+
+    useEffect(() => {
+        if(isSelectUserSearch && chat) {
+            setIsSelectUserSearch(false);
+            setCurrentChat({show: true, chatId: chat?.id});
+            const chatData = {
+                token: token,
+                id :userChatWith.id
+            } 
+            dispatch(getSingleChat(chatData))
         }
     }, [chat])
     
     useEffect(() => {
         if(message && message?.status == 200) {
-            if(chat) {
                 if(!chat?.group) {
                     const chatData = {
                         token: token,
@@ -265,7 +323,6 @@ export default function HomePage() {
                     }
                     dispatch(getChatById(chatData))
                 }
-            }
         }
     }, [message])
 
@@ -347,7 +404,7 @@ export default function HomePage() {
                                 {users.map((item) => {
                                     if(item?.id == user?.id) return;
                                     return (
-                                    <div key={item.id} onClick={() => handleSelectChatCard(item)}>
+                                    <div key={item.id} onClick={() => handleSelectUser(item)}>
                                     <ChatCard user={item} isHide={true} />
                                     </div>
                                 )}
@@ -487,7 +544,7 @@ export default function HomePage() {
                                     </div>
                                 </div>
                                 <input 
-                                    className='py-2 outline-none border-none bg-white    rounded-lg w-[85%]' 
+                                    className='py-2 px-2 outline-none border-none bg-white rounded-lg w-[85%]' 
                                     type='text' 
                                     onChange={(e) => setContent(e.target.value)}
                                     placeholder='Nhập tin nhắn...'

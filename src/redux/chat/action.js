@@ -38,7 +38,6 @@ export const getAllChat = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
-    console.log("request", resData);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_ALL_SUCCESS", payload: resData.chats });
     } else {
@@ -74,7 +73,7 @@ export const getChatById = (chatData) => async (dispatch) => {
   }
 };
 export const getSingleChat = (chatData) => async (dispatch) => {
-  // console.log(chatData);
+  console.log(chatData);
   dispatch({ type: "GET_CHAT_SINGLE_REQUEST" });
   try {
     const res = await fetch(
