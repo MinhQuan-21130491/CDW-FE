@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './styles/ProgressBar.css';
 
 export default function ProgressBar({ activeIndex, duration, index }) {
+    // console.log(duration)
     const isActive = index === activeIndex;
     const [progress, setProgress] = useState(0);
 

@@ -22,6 +22,7 @@ import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
 import EmojiPicker from "emoji-picker-react";
 import SockJS from 'sockjs-client/dist/sockjs'
 import {over} from 'stompjs'
+import StatusModal from './StatusModal'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -44,13 +45,20 @@ export default function HomePage() {
     const [images, setImages] = useState([]);
     const [stompClient, setStompClient] = useState();
     const [isConnect, setIsConnect] = useState(false);
-    const [firstChat, setFirstChat] = useState(false);
     const [isSelectUserSearch, setIsSelectUserSearch] = useState(false);
     const [isOpenChatFirst, setIsOpenChatFirst] = useState(false);
     const [isSend, setIsSend] = useState(false);
-    //websocket
-    
+    const [statusModalOpen, setStatusModalOpen] = useState(false);
 
+    const handleOpenStatusModal = () => {
+        setStatusModalOpen(true);
+      };
+    
+      const handleCloseStatusModal = () => {
+        setStatusModalOpen(false);
+      };
+
+    //websocket
     // xử lý render lại UI list chat
     function onReceiNewMessage(payload) {
         const noti = payload.body;
@@ -100,7 +108,7 @@ export default function HomePage() {
         const receivedMessage = JSON.parse(payload.body);
         setMessageData(prevData => ({
             ...prevData,
-            userMessages: [...prevData.userMessages, receivedMessage],
+            userMessages: [...prevData?.userMessages, receivedMessage],
         }));        
         // dispatch(getAllChat({token: token, userId: user?.id}))
     }
@@ -313,7 +321,7 @@ export default function HomePage() {
                 if(!chat?.group) {
                     const chatData = {
                         token: token,
-                        id :userChatWith.id
+                        id :userChatWith?.id
                     }
                     dispatch(getSingleChat(chatData))
                 }else {
@@ -351,7 +359,7 @@ export default function HomePage() {
                             <p className='cursor-pointer text-lg '>{user?.full_name}</p>
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
-                            <TbCircleDashed onClick = {() => navigate("/status")} className='cursor-pointer'/>
+                            <TbCircleDashed onClick={handleOpenStatusModal} className='cursor-pointer'/>
                             <BiCommentDetail className='cursor-pointer'/>
                             <div>
                                 <BsThreeDotsVertical 
@@ -565,6 +573,11 @@ export default function HomePage() {
                 }
             </div>
         </div>
+        {/* Status Modal */}
+      <StatusModal 
+        open={statusModalOpen} 
+        onClose={handleCloseStatusModal} 
+      />
     </div>
   )
 }
