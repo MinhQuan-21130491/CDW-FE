@@ -15,7 +15,7 @@ import { Menu, MenuItem } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
 import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
-import { searchUser } from '../redux/user/action'
+import { getAllUser, searchUser } from '../redux/user/action'
 import UserCard from '../components/UserCard'
 import { sendMessage, sendMessageGroup } from '../redux/message/action'
 import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
@@ -68,7 +68,7 @@ export default function HomePage() {
     }
 
     const connect =() => {
-        const sock = new SockJS("http://192.168.1.10:5454/ws");
+        const sock = new SockJS("http://192.168.1.6:5454/ws");
         const temp = over(sock);
        
 
@@ -331,6 +331,8 @@ export default function HomePage() {
                     }
                     dispatch(getChatById(chatData))
                 }
+        }else {
+            //xử lý lỗi ở đây nha quân
         }
     }, [message])
 
@@ -339,6 +341,10 @@ export default function HomePage() {
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messageData.userMessages]);
+
+    useEffect(() => {
+        dispatch(getAllUser(token))
+      },[])
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -576,6 +582,7 @@ export default function HomePage() {
         {/* Status Modal */}
       <StatusModal 
         open={statusModalOpen} 
+
         onClose={handleCloseStatusModal} 
       />
     </div>

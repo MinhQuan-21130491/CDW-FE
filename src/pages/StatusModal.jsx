@@ -1,19 +1,31 @@
 // components/StatusModal.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import StatusUserCard from '../components/StatusUserCard';
 import { AiOutlineClose } from 'react-icons/ai';
 import StatusViewer from './StatusViewer';
-import { useSelector } from 'react-redux';
 import { 
   Modal,
   Box,
   IconButton,
   Divider
 } from '@mui/material';
+import { useSelector } from 'react-redux';
 
-export default function StatusModal({ open, onClose }) {
-  const { user } = useSelector(state => state.auth);
-
+export default function StatusModal({ open, onClose}) {
+  const {user} = useSelector((state) => state.auth);
+  const {users} = useSelector((state) => state.user);
+  const [stories, setStories] = useState([]);
+  const [ownerStory, setOwnerStory] = useState([]);
+  const handleViewStories = (stories, ownerStory) => {
+    setStories(stories);
+    setOwnerStory(ownerStory)
+  }
+  useEffect(() => {
+    if (user?.stories) {
+      setStories(user.stories);
+      setOwnerStory(user?.id);
+    }
+  }, [user?.stories, open]);
   return (
     <Modal
       open={open}
@@ -24,6 +36,9 @@ export default function StatusModal({ open, onClose }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        '& .MuiBox-root': { // Target Box component inside Modal
+          border: 'none' // Bỏ border
+        }
       }}
     >
       <Box
@@ -49,14 +64,18 @@ export default function StatusModal({ open, onClose }) {
             overflow: 'hidden',
           }}
         >
-          <Box pb={2}>
+          <Box pb={2} onClick = {() => handleViewStories(user?.stories, user?.id)}>
             <StatusUserCard user={user} isCreate={true}/>
           </Box>
           <Divider sx={{ bgcolor: 'rgba(255,255,255)' }} />
           <Box sx={{ overflowY: 'auto', flex: 1 }}>
-            {[1, 1, 1, 1].map((item, index) => (
-              <StatusUserCard key={index} />
-            ))}
+            {users?.map((item, index) => {
+              if(item?.id == user?.id) return;
+              return (
+              <Box onClick = {() => handleViewStories(item?.stories, item?.id)}>
+                <StatusUserCard key={index} user ={item}  />
+              </Box>
+              )})}
           </Box>
         </Box>
 
@@ -80,7 +99,7 @@ export default function StatusModal({ open, onClose }) {
           >
             <AiOutlineClose fontSize="large" />
           </IconButton>
-          <StatusViewer />
+          <StatusViewer stories={stories} ownerStory = {ownerStory}/>
         </Box>
       </Box>
     </Modal>

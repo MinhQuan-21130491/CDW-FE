@@ -27,3 +27,27 @@ export const searchUser = (data) => async (dispatch) => {
     });
   }
 };
+export const getAllUser = (token) => async (dispatch) => {
+  dispatch({ type: "GET_ALL_USER_REQUEST" });
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/users/users`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const resData = await res.json();
+    if (res.ok) {
+      dispatch({ type: "GET_ALL_USER_SUCCESS", payload: resData.usersDto });
+    } else {
+      dispatch({ type: "GET_ALL_USER_FAILURE", payload: resData.message });
+    }
+  } catch (error) {
+    // Dispatch lỗi nếu có
+    dispatch({
+      type: "GET_ALL_USER_FAILURE",
+      payload: error.message,
+    });
+  }
+};

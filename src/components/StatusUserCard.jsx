@@ -1,10 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FcAddImage } from "react-icons/fc";
+import AddStoryModal from './AddStoryModal';
 
 export default function StatusUserCard({user, isCreate = false}) {
+  const[open, setOpen] = useState(false);
   const handleAddStory = () => {
-
+      setOpen(true);
+  }
+  const handleCloseModal = () => {
+      setOpen(false);
   }
   return (
     <div className='flex items-center pt-3 cursor-pointer w-[100%]'>
@@ -22,6 +27,7 @@ export default function StatusUserCard({user, isCreate = false}) {
             <FcAddImage className='text-4xl cursor-pointer' onClick={handleAddStory}/>
           </div>
         )}
+        <AddStoryModal open={open} onClose={handleCloseModal} user = {user}/>
     </div>
   )
 }
