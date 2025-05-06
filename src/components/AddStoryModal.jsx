@@ -73,6 +73,7 @@ const LoadingOverlay = styled('div')({
   zIndex: 999,
   borderRadius: '8px',
 });
+const maxFileSize = 20 * 1024 * 1024; // 20MB
 
 export default function AddStoryModal({ open, onClose, user }) {
   const [media, setMedia] = useState({ type: '', file: '', url: '' });
@@ -89,6 +90,10 @@ export default function AddStoryModal({ open, onClose, user }) {
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      if(file.size > maxFileSize) {
+        alert("Ảnh/video vượt quá 20MB");
+        return;
+      } 
       const fileType = file.type.startsWith('image/') ? 'image' : 'video';
       const fileURL = URL.createObjectURL(file);
       setMedia({ type: fileType, file: file, url: fileURL });
