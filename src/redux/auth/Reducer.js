@@ -1,10 +1,4 @@
-import {
-  LOGIN,
-  REGISTER,
-  REQ_USER,
-  SEARCH_USER,
-  UPDATE_USER,
-} from "./ActionType";
+import { LOGIN, REGISTER, REQ_USER, UPDATE_USER } from "./ActionType";
 const initValue = {
   signup: null,
   signin: null,
@@ -20,8 +14,6 @@ export const authReducer = (state = initValue, { type, payload }) => {
     return { ...state, user: payload };
   } else if (type == UPDATE_USER) {
     return { ...state, update: payload };
-  } else if (type === SEARCH_USER) {
-    return { ...state, signin: payload };
   }
   return state;
 };

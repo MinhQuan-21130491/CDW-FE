@@ -1,11 +1,5 @@
 import { BASE_API_URL } from "../../config/api";
-import {
-  LOGIN,
-  REGISTER,
-  REQ_USER,
-  SEARCH_USER,
-  UPDATE_USER,
-} from "./ActionType";
+import { LOGIN, REGISTER, REQ_USER, UPDATE_USER } from "./ActionType";
 
 export const register = (data) => async (dispatch) => {
   try {
@@ -50,30 +44,12 @@ export const currentUser = (token) => async (dispatch) => {
       },
     });
     const resData = await res.json();
-    console.log(resData);
     dispatch({ type: REQ_USER, payload: resData });
   } catch (err) {
     console.log(err);
   }
 };
-export const searchUser = (data) => async (dispatch) => {
-  try {
-    const res = await fetch(
-      `${BASE_API_URL}/api/users/search?query=${data.keyword}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${data.token}`,
-        },
-      }
-    );
-    const resData = await res.json();
-    dispatch({ type: SEARCH_USER, payload: resData });
-  } catch (err) {
-    console.log(err);
-  }
-};
+
 export const updateUser = (data) => async (dispatch) => {
   try {
     const res = await fetch(`${BASE_API_URL}/api/users/update`, {
@@ -85,7 +61,7 @@ export const updateUser = (data) => async (dispatch) => {
       body: JSON.stringify(data),
     });
     const resData = await res.json();
-    console.log(resData)
+    console.log(resData);
     dispatch({ type: UPDATE_USER, payload: resData });
   } catch (err) {
     console.log(err);
