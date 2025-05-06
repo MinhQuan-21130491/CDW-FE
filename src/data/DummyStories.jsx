@@ -1,4 +1,5 @@
 export const stories = [
+    {video: 'https://cdn.pixabay.com/video/2025/04/09/270940_large.mp4'},
     {image: 'https://i.pinimg.com/736x/93/b9/c3/93b9c355208527eb0dc4d88608e485cf.jpg'},
     {image: 'https://images.pexels.com/photos/147411/italy-mountains-dawn-daybreak-147411.jpeg?cs=srgb&dl=pexels-pixabay-147411.jpg&fm=jpg  '},
     {image: 'https://images.pexels.com/photos/29099994/pexels-photo-29099994/free-photo-of-ng-i-ph-n-c-m-gi-trai-cay-nhi-t-d-i-t-i-ngoai-tr-i.jpeg?auto=compress&cs=tinysrgb&w=600&lazy=load'},
