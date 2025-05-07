@@ -18,11 +18,15 @@ import { Alert, Button, Snackbar } from '@mui/material';
     const handleSelectPicture = (event) => {
       const file = event.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPicture(reader.result);
-        };
-        reader.readAsDataURL(file);
+        if(file.size < 1 * 1024 * 1024) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setPicture(reader.result);
+          };
+          reader.readAsDataURL(file);
+        }else {
+          // xử lý lỗi sau
+        }
       }
     };
     const handleUpdateUser = () => {

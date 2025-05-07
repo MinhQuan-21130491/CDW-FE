@@ -6,7 +6,7 @@
   overflow: hidden;
   opacity: 0.5;
   transition: opacity 0.3s easy-out;
-  margin: 1rem;
+  margin: 10px 2px 0 2px;
 }
 .active {
   opacity: 1;
