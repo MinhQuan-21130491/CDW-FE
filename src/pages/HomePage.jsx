@@ -23,6 +23,7 @@ import EmojiPicker from "emoji-picker-react";
 import SockJS from 'sockjs-client/dist/sockjs'
 import {over} from 'stompjs'
 import StatusModal from './StatusModal'
+import GroupManagementModal from '../components/ManageChatGroup'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -49,7 +50,7 @@ export default function HomePage() {
     const [isOpenChatFirst, setIsOpenChatFirst] = useState(false);
     const [isSend, setIsSend] = useState(false);
     const [statusModalOpen, setStatusModalOpen] = useState(false);
-
+    const [isOpenManageChat, setIsOpenManageChat] = useState(false);
     const handleOpenStatusModal = () => {
         setStatusModalOpen(true);
       };
@@ -251,11 +252,19 @@ export default function HomePage() {
    
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
+    const [anchorElChat, setAnchorElChat] = useState(null);
+    const openChat = Boolean(anchorElChat);
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
+    const handleClickChat = (event) => {
+        setAnchorElChat(event.currentTarget);
+    };
     const handleClose = () => {
         setAnchorEl(null);
+    };
+    const handleCloseChat = () => {
+        setAnchorElChat(null);
     };
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -268,6 +277,9 @@ export default function HomePage() {
     const handleUserUpdate = () => {
         dispatch(currentUser(token));
     };
+    const handleManageChat = () => {
+        setIsOpenManageChat(true);
+    }
     useEffect(() => {
         dispatch(currentUser(token));
     }, [])
@@ -345,6 +357,7 @@ export default function HomePage() {
     useEffect(() => {
         dispatch(getAllUser(token))
       },[])
+      console.log(messageData?.userMessages)
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -498,8 +511,29 @@ export default function HomePage() {
                                     <p>{userChatWith?.full_name || userChatWith?.chat_name || 'Chip'}</p>
                                 </div>
                                 <div className='flex items-center space-x-3'>
-                                    <AiOutlineSearch className='text-xl '/>
-                                    <BiDotsVerticalRounded className='text-xl '/>
+                                    {userChatWith?.chat_name && (
+                                        <div>
+                                        <BsThreeDotsVertical 
+                                        id="basic-button"
+                                        aria-controls={openChat ? 'basic-menu' : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={openChat ? 'true' : undefined}
+                                        onClick={handleClickChat}
+                                        className='cursor-pointer'
+                                        />
+                                        <Menu
+                                            id="basic-menu"
+                                            anchorEl={anchorElChat}
+                                            open={openChat}
+                                            onClose={handleCloseChat}
+                                            MenuListProps={{
+                                            'aria-labelledby': 'basic-button',
+                                            }}
+                                        >
+                                            <MenuItem onClick={() => handleManageChat()}>{'Quản lý nhóm'}</MenuItem>                                          
+                                        </Menu>
+                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -525,7 +559,7 @@ export default function HomePage() {
                         </div>
                         {/* Emoji */}
                         {showEmoji && (
-                            <div className='absolute top-28 -left-5'>
+                            <div className='absolute top-28 left-0 '>
                                 <EmojiPicker onEmojiClick={handleEmojiSelect} />
                             </div>
                         )}
@@ -582,9 +616,9 @@ export default function HomePage() {
         {/* Status Modal */}
       <StatusModal 
         open={statusModalOpen} 
-
         onClose={handleCloseStatusModal} 
       />
+      <GroupManagementModal open={isOpenManageChat} handleClose={() => setIsOpenManageChat(false)} />
     </div>
   )
 }

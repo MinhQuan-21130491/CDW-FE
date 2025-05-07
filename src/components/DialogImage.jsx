@@ -40,7 +40,7 @@ export default function ImageDialog({open, handleOnclose, img}) {
           <CloseIcon />
         </IconButton>
         <DialogContent sx={{ padding: 0 }}>
-          <img src={img}/>
+          <img src={img} className='max-w-[600px] max-h-[600px] object-cover'/>
         </DialogContent>
 
       </BootstrapDialog>

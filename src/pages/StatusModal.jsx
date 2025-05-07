@@ -99,7 +99,7 @@ export default function StatusModal({ open, onClose}) {
           >
             <AiOutlineClose fontSize="large" />
           </IconButton>
-          <StatusViewer stories={stories} ownerStory = {ownerStory}/>
+          <StatusViewer stories={stories} ownerStory = {ownerStory} />
         </Box>
       </Box>
     </Modal>

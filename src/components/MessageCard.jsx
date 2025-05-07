@@ -57,7 +57,7 @@ export default function MessageCard({ isReceiUserMessage, content, avatar, showA
         bg-white rounded-full px-2 py-[2px]  text-center">
         {time}
       </span>
-      <ImageDialog open = {openDialog} handleOnclose={handleCloseDialog} img={imageSelected}/>
+      <ImageDialog  open = {openDialog} handleOnclose={handleCloseDialog} img={imageSelected} />
     </div>
   );
 }
@@ -72,5 +72,3 @@ function formatFullDate(dateString) {
   return `${hours}:${minutes} ${day}-${month}-${year}`;
 }
 
-const dateStr = "2025-04-06T19:26:41";
-console.log(formatFullDate(dateStr));  // Output: 19:26 06-04-2025
