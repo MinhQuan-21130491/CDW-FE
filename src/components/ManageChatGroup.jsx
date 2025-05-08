@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,16 +11,45 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton
+  IconButton,
+  CircularProgress,
+  styled,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useDispatch, useSelector } from 'react-redux';
+import { renameGroup } from '../redux/chat/action';
 
-export default function GroupManagementModal({ open, handleClose }) {
+const LoadingOverlay = styled('div')({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: '#D3D3D3',
+  opacity: 0.5,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+  borderRadius: '2px',
+});
+
+export default function GroupManagementModal({ open, handleClose, chatId, token, groupNameCurrent, chat_image, stompClient }) {
   const [tabIndex, setTabIndex] = useState(0);
-  const [groupName, setGroupName] = useState('Nhóm của tôi');
+  const [groupName, setGroupName] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
+  const {message, loading} = useSelector(state => state.chat);
+  const [click, setClick] = useState(false);
+  const [openSnackBar, setOpenSnackBar] = useState(false);
+  const [status, setStatus] = useState(false);
+  const dispatch = useDispatch();
 
+  const handleSnackBarClose = () => {
+    setOpenSnackBar(false);
+  };
   const dummyUsers = [
     { id: 1, name: 'Nguyễn Văn A' },
     { id: 2, name: 'Trần Thị B' },
@@ -29,8 +58,13 @@ export default function GroupManagementModal({ open, handleClose }) {
   ];
 
   const handleRename = () => {
-    console.log('Tên nhóm mới:', groupName);
-    handleClose();
+    const data = {
+        token: token,
+        chatId: chatId,
+        newName: groupName,
+    }
+    dispatch(renameGroup(data));
+    setClick(true);
   };
 
   const handleAddMember = (user) => {
@@ -45,8 +79,25 @@ export default function GroupManagementModal({ open, handleClose }) {
     u.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  useEffect(() => {
+    setGroupName(groupNameCurrent);
+  }, [groupNameCurrent]);
+
+  useEffect(() => {
+        if(message === "Rename group successfully" && click) {
+          stompClient.send("/app/notification", {"content-type": "application/json"}, JSON.stringify({name_request: "change group name", chatId: chatId, chat_name: groupName, chat_image: chat_image}));
+          setClick(false);   
+          setStatus(true);
+          setOpenSnackBar(true);
+        }
+  }, [message, click])
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      {loading && (
+        <LoadingOverlay>
+        <CircularProgress color="white" />
+        </LoadingOverlay>
+      )}
       <DialogTitle>Quản lý nhóm</DialogTitle>
       <DialogContent>
         <Tabs value={tabIndex} onChange={(e, val) => setTabIndex(val)} sx={{ mb: 2 }}>
@@ -59,13 +110,13 @@ export default function GroupManagementModal({ open, handleClose }) {
         {tabIndex === 0 && (
           <Box>
             <TextField
-              label="Tên nhóm mới"
+              label= "Tên nhóm mới"
               fullWidth
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               sx={{ mb: 2 }}
             />
-            <Button variant="contained" onClick={handleRename}>Lưu</Button>
+            <Button disabled = {groupNameCurrent === groupName ? true :false} variant="contained" onClick={handleRename}>Lưu</Button>
           </Box>
         )}
 
@@ -116,6 +167,15 @@ export default function GroupManagementModal({ open, handleClose }) {
           </Box>
         )}
       </DialogContent>
+      <Snackbar 
+              open={openSnackBar} 
+              autoHideDuration={6000} 
+              onClose={handleSnackBarClose}
+            >
+              <Alert onClose={handleSnackBarClose} severity={status ? 'success' : 'error'} sx={{ width: '100%' }}>
+                {status ? 'Thay đổi tên nhóm thành công!' : 'Thay đổi tên nhóm thất bại!'}
+              </Alert>
+      </Snackbar>
     </Dialog>
   );
 }

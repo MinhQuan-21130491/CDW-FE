@@ -38,12 +38,12 @@ export default function MessageCard({ isReceiUserMessage, content, avatar, showA
             <div className= {images?.length > 1 ?'flex space-x-2 flex-wrap':''}>
               {images && images?.map((item, index) => {
                   return (
-                    <>                    
+                    <div key={index}>                    
                       <img src ={item?.url} 
                         className={images.length > 1 ?'rounded-md border object-cover cursor-pointer w-[80px] h-[80px]':'rounded-md border object-cover cursor-pointer md:max-w-[500px] md:max-h-[500px] max-w-[200px] max-h-[200px]'}
                         onClick={() => handleOpenDialog(item?.url)}
                       /> 
-                    </>
+                    </div>
                   )
                 })}
             </div>

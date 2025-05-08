@@ -72,7 +72,7 @@ export default function StatusModal({ open, onClose}) {
             {users?.map((item, index) => {
               if(item?.id == user?.id) return;
               return (
-              <Box onClick = {() => handleViewStories(item?.stories, item?.id)}>
+              <Box key={index} onClick = {() => handleViewStories(item?.stories, item?.id)}>
                 <StatusUserCard key={index} user ={item}  />
               </Box>
               )})}

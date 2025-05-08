@@ -24,6 +24,7 @@ import SockJS from 'sockjs-client/dist/sockjs'
 import {over} from 'stompjs'
 import StatusModal from './StatusModal'
 import GroupManagementModal from '../components/ManageChatGroup'
+import { BASE_API_URL } from '../config/api'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -62,14 +63,22 @@ export default function HomePage() {
     //websocket
     // xử lý render lại UI list chat
     function onReceiNewMessage(payload) {
-        const noti = payload.body;
-        if(noti === 'New message') {
+        let res = null;
+        if(payload.body === "New message") {
+            res = "New message";
+        }else {
+            res = JSON.parse(payload.body);
+        }
+
+        if(res && res === 'New message' ) {
+            dispatch(getAllChat({token: token, userId: user?.id}))
+        }else if(res?.name_request === 'change group name') {
+            setUserChatWith({chatId : res?.chatId, chat_name: res?.chat_name, chat_image: res?.chat_image})
             dispatch(getAllChat({token: token, userId: user?.id}))
         }
     }
-
     const connect =() => {
-        const sock = new SockJS("http://192.168.1.6:5454/ws");
+        const sock = new SockJS(`${BASE_API_URL}/ws`);
         const temp = over(sock);
        
 
@@ -126,8 +135,10 @@ export default function HomePage() {
 
     // mở connect socket
     useEffect(() => {
-        connect();
-    }, [])
+        if(user) {
+            connect();
+        }
+    }, [user])
 
     const handleSearch = (keyword) => {
         const data = {
@@ -167,19 +178,19 @@ export default function HomePage() {
         setIsSend(false);
     }
     const handleSelectChatCardGroup = (group) => {
-        setCurrentChat({show: true, chatId: group?.chatId});
+        setCurrentChat({show: true, chatId: group?.chatId, chat_name: group?.chat_name});
         setUserChatWith(group);
         const chatData = {
             token: token,
             chatId:  group?.chatId,
         }
-        dispatch(getChatById(chatData))
+        dispatch(getChatById(chatData));
         // chỉ load tin nhắn khi mở chat room lần đầu
         setIsOpenChatFirst(true);
         // xử lý khi ấn qua chat room khác xong ấn về lại không bị duplicate tin nhắn
         setIsSend(false);
     }
-
+    
         // Hàm khi người dùng chọn emoji
     const handleEmojiSelect = (emojiData) => {
         setContent((prevMessage) => prevMessage + emojiData.emoji); // Thêm emoji vào tin nhắn
@@ -357,7 +368,7 @@ export default function HomePage() {
     useEffect(() => {
         dispatch(getAllUser(token))
       },[])
-      console.log(messageData?.userMessages)
+
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -618,7 +629,14 @@ export default function HomePage() {
         open={statusModalOpen} 
         onClose={handleCloseStatusModal} 
       />
-      <GroupManagementModal open={isOpenManageChat} handleClose={() => setIsOpenManageChat(false)} />
+      <GroupManagementModal open={isOpenManageChat}
+                            handleClose={() => setIsOpenManageChat(false)} 
+                            chatId = {currentChat?.chatId} 
+                            token = {token} 
+                            groupNameCurrent={currentChat?.chat_name}
+                            stompClient = {stompClient}
+                            chat_image={userChatWith?.chat_image}
+        />
     </div>
   )
 }

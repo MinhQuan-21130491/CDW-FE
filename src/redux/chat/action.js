@@ -98,7 +98,9 @@ export const renameGroup = (chatData) => async (dispatch) => {
   dispatch({ type: "RENAME_GROUP_REQUEST" });
   try {
     const res = await fetch(
-      `${BASE_API_URL}/api/chats/?chatId=${chatData.chatId}/rename/?newName=${chatData.newName}`,
+      `${BASE_API_URL}/api/chats/${chatData.chatId}/rename/${encodeURIComponent(
+        chatData.newName
+      )}`,
       {
         method: "PUT",
         headers: {
@@ -108,12 +110,13 @@ export const renameGroup = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
+    console.log(resData);
     if (res.ok) {
-      dispatch({ type: "RENAME_GROUP_SUCCESS", payload: resData.chat });
+      dispatch({ type: "RENAME_GROUP_SUCCESS", payload: resData.message });
     } else {
-      dispatch({ type: "RENAME_GROUP_FAILED", payload: resData.message });
+      dispatch({ type: "RENAME_GROUP_FAILURE", payload: resData.message });
     }
   } catch (err) {
-    dispatch({ type: "RENAME_GROUP_FAILED", payload: err.message });
+    dispatch({ type: "RENAME_GROUP_FAILURE", payload: err.message });
   }
 };

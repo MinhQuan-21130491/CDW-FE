@@ -2,6 +2,7 @@ const initialState = {
   chats: [],
   chat: [],
   status: "",
+  message: "",
   loading: false,
   error: null,
 };
@@ -47,10 +48,11 @@ export const chatReducer = (state = initialState, action) => {
         chat: action.payload,
       };
     case "RENAME_GROUP_SUCCESS":
+      console.log("reducer");
       return {
         ...state,
         loading: false,
-        messsage: action.payload,
+        message: action.payload,
       };
 
     case "CREATE_CHAT_GROUP_FAILURE":
