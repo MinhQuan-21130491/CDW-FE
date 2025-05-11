@@ -21,6 +21,8 @@ import { sendMessage, sendMessageGroup } from '../redux/message/action'
 import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
 import EmojiPicker from "emoji-picker-react";
 import SockJS from 'sockjs-client/dist/sockjs'
+import { Client } from '@stomp/stompjs';
+
 import {over} from 'stompjs'
 import StatusModal from './StatusModal'
 import GroupManagementModal from '../components/ManageChatGroup'
@@ -45,18 +47,21 @@ export default function HomePage() {
     const [showEmoji, setShowEmoji] = useState(false)
     const [selectedImage, setSelectedImage] = useState(false);
     const [images, setImages] = useState([]);
-    const [stompClient, setStompClient] = useState();
+    const [onlineUsers, setOnlineUsers] = useState([]);
     const [isConnect, setIsConnect] = useState(false);
     const [isSelectUserSearch, setIsSelectUserSearch] = useState(false);
     const [isOpenChatFirst, setIsOpenChatFirst] = useState(false);
     const [isSend, setIsSend] = useState(false);
     const [statusModalOpen, setStatusModalOpen] = useState(false);
     const [isOpenManageChat, setIsOpenManageChat] = useState(false);
+    const [chatsPlusStatusOnline, setChatsPlusStatusOnline] = useState();
+    const stompClient = useRef(null);
+    const isConnecting = useRef(false);
     const handleOpenStatusModal = () => {
         setStatusModalOpen(true);
       };
     
-      const handleCloseStatusModal = () => {
+    const handleCloseStatusModal = () => {
         setStatusModalOpen(false);
       };
 
@@ -77,68 +82,136 @@ export default function HomePage() {
             dispatch(getAllChat({token: token, userId: user?.id}))
         }
     }
-    const connect =() => {
-        const sock = new SockJS(`${BASE_API_URL}/ws`);
-        const temp = over(sock);
-       
 
-        const headers = {
-            Authorization: `Bearer ${token}`,
-            "X-XSRF-TOKEN": getCookie("XSRF-TOKEN")
-        }
-        temp.connect(
-            headers,
-            () => {
-                console.log("✅ Connected!");
-                onConnect();
-                temp?.subscribe("/topic/notification/", onReceiNewMessage)
-            },
-            (error) => {
-                console.error("❌ Connection error:", error);
-            }
-        );
-        setStompClient(temp);
+const connect = () => {
+    if (stompClient.current?.connected || isConnecting.current) {
+        console.log("⚠️ Already connecting or connected to WebSocket");
+        return;
     }
 
+    isConnecting.current = true;
 
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if(parts.length === 2) {
-            return parts.pop().split(';').shift();
-        }
-    }
+    const client = new Client({
+        webSocketFactory: () => new SockJS(`${BASE_API_URL}/ws`),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,  // Thêm heartbeat để giữ kết nối
+        heartbeatOutgoing: 4000,
+        debug: (str) => console.log('[WebSocket]', str),
+    });
 
-    const onConnect = () => {
-       
+    stompClient.current = client;
+    client.subscriptions = []; // Lưu trữ các subscription
+
+    client.onConnect = (frame) => {
+        console.log("✅ Connected to WebSocket");
         setIsConnect(true);
+        
+        // Gửi thông báo online
+        client.publish({
+            destination: "/app/init-online-users",
+            body: JSON.stringify({}) 
+        });
+
+        // Subscribe và lưu lại subscription
+        const onlineUsersSub = client.subscribe("/topic/online-users", (message) => {
+            try {
+                const userIds = JSON.parse(message.body);
+                setOnlineUsers(userIds);
+                console.log("📥 Online users:", userIds);
+            } catch (error) {
+                console.error("❌ Failed to parse message:", error);
+            }
+        });
+
+        const notificationSub = client.subscribe("/topic/notification", onReceiNewMessage);
+
+        // Lưu các subscription để hủy sau này
+        client.subscriptions.push(onlineUsersSub, notificationSub);
+
+        isConnecting.current = false;
+    };
+
+    client.onStompError = (frame) => {
+        console.error("❌ STOMP Error:", frame);
+        isConnecting.current = false;
+        setIsConnect(false);
+    };
+
+    client.onWebSocketError = (evt) => {
+        console.error("❌ WebSocket error:", evt);
+        isConnecting.current = false;
+        setIsConnect(false);
+    };
+
+    client.onDisconnect = () => {
+        console.log("🔌 Disconnected");
+        setIsConnect(false);
+        isConnecting.current = false;
+    };
+
+    client.connectHeaders = {
+        userId: user?.id?.toString() || '',
+    };
+
+    client.activate();
+};
+
+const disconnect = async () => {
+    if (stompClient.current) {
+        try {
+            // Hủy tất cả subscription trước
+            stompClient.current.subscriptions?.forEach(sub => sub.unsubscribe());
+            stompClient.current.subscriptions = [];
+            
+            if (stompClient.current.connected) {
+                await stompClient.current.deactivate();
+            }
+          
+            console.log("🔌 Disconnected");
+        } catch (err) {
+            console.error("❌ Disconnect error", err);
+        } finally {
+            stompClient.current = null;
+            setIsConnect(false);
+            isConnecting.current = false;
+        }
+    }
+};
+
+useEffect(() => {
+    const handleBeforeUnload = async () => {
+        await disconnect();
+    };
+
+    if (user && !isConnecting.current) {
+        connect();
     }
 
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+}, [user]);
     const onMessageRecei = (payload) =>{
         const receivedMessage = JSON.parse(payload.body);
         setMessageData(prevData => ({
             ...prevData,
             userMessages: [...prevData?.userMessages, receivedMessage],
         }));        
-        // dispatch(getAllChat({token: token, userId: user?.id}))
     }
 
     //subscribe phòng chat để nhận tin nhắn
-    useEffect(() => {
+        useEffect(() => {
         if(currentChat.chatId && isConnect && stompClient) {
-            const subscription = stompClient.subscribe("/group/" + currentChat?.chatId?.toString(), onMessageRecei)
+            const subscription = stompClient.current.subscribe("/group/" + currentChat?.chatId?.toString(), onMessageRecei)
             return () => {
                 subscription.unsubscribe();
             }
         }
     },[currentChat])
 
-    // mở connect socket
-    useEffect(() => {
-        if(user) {
-            connect();
-        }
-    }, [user])
+
 
     const handleSearch = (keyword) => {
         const data = {
@@ -322,8 +395,17 @@ export default function HomePage() {
               }
         }
         // send socket
-        if(message && stompClient && isSend) {
-            stompClient.send("/app/message", { "content-type": "application/json"}, JSON.stringify({...messagesWithAvatar[messagesWithAvatar?.length-1], chatId: currentChat?.chatId}))
+        if(message && stompClient.current && isSend) {
+            stompClient.current.publish({
+                destination: '/app/message',
+                body: JSON.stringify({
+                    ...messagesWithAvatar[messagesWithAvatar?.length - 1],
+                    chatId: currentChat?.chatId
+                }),
+                headers: { 
+                    'content-type': 'application/json'
+                }
+            });        
         }
     }, [chat])
 
@@ -368,6 +450,10 @@ export default function HomePage() {
     useEffect(() => {
         dispatch(getAllUser(token))
       },[])
+
+    useEffect(() => {
+                        console.log(onlineUsers)
+    }, [onlineUsers])
 
   return (
     <div className='relative h-screen bg-slate-300 '>
@@ -634,7 +720,7 @@ export default function HomePage() {
                             chatId = {currentChat?.chatId} 
                             token = {token} 
                             groupNameCurrent={currentChat?.chat_name}
-                            stompClient = {stompClient}
+                            stompClient = {stompClient.current}
                             chat_image={userChatWith?.chat_image}
         />
     </div>

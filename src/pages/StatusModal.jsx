@@ -69,7 +69,7 @@ export default function StatusModal({ open, onClose}) {
           </Box>
           <Divider sx={{ bgcolor: 'rgba(255,255,255)' }} />
           <Box sx={{ overflowY: 'auto', flex: 1 }}>
-            {users?.map((item, index) => {
+            {users && users?.map((item, index) => {
               if(item?.id == user?.id) return;
               return (
               <Box key={index} onClick = {() => handleViewStories(item?.stories, item?.id)}>

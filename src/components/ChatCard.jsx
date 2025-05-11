@@ -18,7 +18,7 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe})
                      {!isHide && (
                         <div className='w-[100%] flex justify-between'>
                             <div className='w-[60%]'>
-                                <p className='text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap'>{isMe? "Bạn: " + messageLast || '':messageLast || ''}</p>
+                                <p className='text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap'>{isMe? "Bạn: " + messageLast || 'Đã gửi hình ảnh':messageLast || 'Đã gửi hình ảnh'}</p>
                             </div>
                             <div className='w-[30%] flex space-x-1 items-center'>
                               <p className='text-xs text-gray-400'>{time && formatTime(time) || ''}</p>

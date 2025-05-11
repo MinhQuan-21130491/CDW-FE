@@ -85,7 +85,18 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
 
   useEffect(() => {
         if(message === "Rename group successfully" && click) {
-          stompClient.send("/app/notification", {"content-type": "application/json"}, JSON.stringify({name_request: "change group name", chatId: chatId, chat_name: groupName, chat_image: chat_image}));
+        stompClient.current.publish({
+            destination: '/app/notification',
+            body: JSON.stringify({
+                name_request: "change group name",
+                chatId: chatId,
+                chat_name: groupName,
+                chat_image: chat_image
+            }),
+            headers: { 
+                'content-type': 'application/json'
+            }
+        });
           setClick(false);   
           setStatus(true);
           setOpenSnackBar(true);
