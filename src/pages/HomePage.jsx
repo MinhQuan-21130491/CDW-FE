@@ -54,9 +54,11 @@ export default function HomePage() {
     const [isSend, setIsSend] = useState(false);
     const [statusModalOpen, setStatusModalOpen] = useState(false);
     const [isOpenManageChat, setIsOpenManageChat] = useState(false);
-    const [chatsPlusStatusOnline, setChatsPlusStatusOnline] = useState();
+    const [enhancedChats, setEnhanceChats] = useState();
+    const [userInChat, setUserInChat] = useState();
     const stompClient = useRef(null);
     const isConnecting = useRef(false);
+    console.log(user?.id)
     const handleOpenStatusModal = () => {
         setStatusModalOpen(true);
       };
@@ -68,131 +70,142 @@ export default function HomePage() {
     //websocket
     // xử lý render lại UI list chat
     function onReceiNewMessage(payload) {
-        let res = null;
-        if(payload.body === "New message") {
-            res = "New message";
-        }else {
-            res = JSON.parse(payload.body);
-        }
-
-        if(res && res === 'New message' ) {
+        const res = payload.body;   
+        if(res && res === 'New message') {
             dispatch(getAllChat({token: token, userId: user?.id}))
-        }else if(res?.name_request === 'change group name') {
+        }
+    }
+    const onChange = (payload) => {
+        const res = JSON.parse(payload.body);
+        if(res?.name_request === 'change group name') {
             setUserChatWith({chatId : res?.chatId, chat_name: res?.chat_name, chat_image: res?.chat_image})
             dispatch(getAllChat({token: token, userId: user?.id}))
         }
     }
+    const onReceiBroadcast = (payload) => {
+        const res = JSON.parse(payload.body);
+        if(res?.message === "Add user to group success")
+            console.log("ress", currentChat.id);
+        dispatch(getAllChat({token: token, userId: user?.id}))
 
-const connect = () => {
-    if (stompClient.current?.connected || isConnecting.current) {
-        console.log("⚠️ Already connecting or connected to WebSocket");
-        return;
     }
+    const connect = () => {
+        if (stompClient.current?.connected || isConnecting.current) {
+            console.log("⚠️ Already connecting or connected to WebSocket");
+            return;
+        }
 
-    isConnecting.current = true;
+        isConnecting.current = true;
 
     const client = new Client({
-        webSocketFactory: () => new SockJS(`${BASE_API_URL}/ws`),
-        reconnectDelay: 5000,
-        heartbeatIncoming: 4000,  // Thêm heartbeat để giữ kết nối
-        heartbeatOutgoing: 4000,
-        debug: (str) => console.log('[WebSocket]', str),
-    });
-
-    stompClient.current = client;
-    client.subscriptions = []; // Lưu trữ các subscription
-
-    client.onConnect = (frame) => {
-        console.log("✅ Connected to WebSocket");
-        setIsConnect(true);
-        
-        // Gửi thông báo online
-        client.publish({
-            destination: "/app/init-online-users",
-            body: JSON.stringify({}) 
+            webSocketFactory: () => new SockJS(`${BASE_API_URL}/ws?token=${token}`),
+            reconnectDelay: 5000,
+            heartbeatIncoming: 4000,  // Thêm heartbeat để giữ kết nối
+            heartbeatOutgoing: 4000,
+            debug: (str) => console.log('[WebSocket]', str),
+            connectHeaders: {
+                // Authorization: `Bearer ${token}`,
+                userId: user?.id?.toString() || '',
+            },
         });
 
-        // Subscribe và lưu lại subscription
-        const onlineUsersSub = client.subscribe("/topic/online-users", (message) => {
-            try {
-                const userIds = JSON.parse(message.body);
-                setOnlineUsers(userIds);
-                console.log("📥 Online users:", userIds);
-            } catch (error) {
-                console.error("❌ Failed to parse message:", error);
-            }
-        });
+        stompClient.current = client;
+        client.subscriptions = []; // Lưu trữ các subscription
 
-        const notificationSub = client.subscribe("/topic/notification", onReceiNewMessage);
-
-        // Lưu các subscription để hủy sau này
-        client.subscriptions.push(onlineUsersSub, notificationSub);
-
-        isConnecting.current = false;
-    };
-
-    client.onStompError = (frame) => {
-        console.error("❌ STOMP Error:", frame);
-        isConnecting.current = false;
-        setIsConnect(false);
-    };
-
-    client.onWebSocketError = (evt) => {
-        console.error("❌ WebSocket error:", evt);
-        isConnecting.current = false;
-        setIsConnect(false);
-    };
-
-    client.onDisconnect = () => {
-        console.log("🔌 Disconnected");
-        setIsConnect(false);
-        isConnecting.current = false;
-    };
-
-    client.connectHeaders = {
-        userId: user?.id?.toString() || '',
-    };
-
-    client.activate();
-};
-
-const disconnect = async () => {
-    if (stompClient.current) {
-        try {
-            // Hủy tất cả subscription trước
-            stompClient.current.subscriptions?.forEach(sub => sub.unsubscribe());
-            stompClient.current.subscriptions = [];
+        client.onConnect = (frame) => {
+            console.log("✅ Connected to WebSocket");
+            setIsConnect(true);
             
-            if (stompClient.current.connected) {
-                await stompClient.current.deactivate();
-            }
-          
+            // // Gửi thông báo online
+            // client.publish({
+            //     destination: "/app/init-online-users",
+            //     body: JSON.stringify({}) 
+            // });
+
+            // Subscribe và lưu lại subscription
+            const onlineUsersSub = client.subscribe("/topic/online-users", (message) => {
+                try {
+                    const userIds = JSON.parse(message.body);
+                    setOnlineUsers(userIds);
+                    console.log("📥 Online users:", userIds);
+                } catch (error) {
+                    console.error("❌ Failed to parse message:", error);
+                }
+            });
+            const messageSub = client.subscribe("/topic/message/"+ user?.id, onReceiNewMessage);
+            const notificationSub = client.subscribe("/topic/change", onChange);
+            const broadcastNotificationToUser = client.subscribe("/topic/notification/" + user.id, onReceiBroadcast) ;
+            // Lưu các subscription để hủy sau này
+            client.subscriptions.push(onlineUsersSub, notificationSub,broadcastNotificationToUser );
+
+            // Sau khi subscribe
+            setTimeout(() => {
+                client.publish({
+                    destination: "/app/init-online-users",
+                    body: JSON.stringify({})
+                });
+            }, 200);
+
+            isConnecting.current = false;
+        };
+
+        client.onStompError = (frame) => {
+            console.error("❌ STOMP Error:", frame);
+            isConnecting.current = false;
+            setIsConnect(false);
+        };
+
+        client.onWebSocketError = (evt) => {
+            console.error("❌ WebSocket error:", evt);
+            isConnecting.current = false;
+            setIsConnect(false);
+        };
+
+        client.onDisconnect = () => {
             console.log("🔌 Disconnected");
-        } catch (err) {
-            console.error("❌ Disconnect error", err);
-        } finally {
-            stompClient.current = null;
             setIsConnect(false);
             isConnecting.current = false;
+        };
+        client.activate();
+    };
+
+    const disconnect = async () => {
+        if (stompClient.current) {
+            try {
+                // Hủy tất cả subscription trước
+                stompClient.current.subscriptions?.forEach(sub => sub.unsubscribe());
+                stompClient.current.subscriptions = [];
+                
+                if (stompClient.current.connected) {
+                    await stompClient.current.deactivate();
+                }
+            
+                console.log("🔌 Disconnected");
+            } catch (err) {
+                console.error("❌ Disconnect error", err);
+            } finally {
+                stompClient.current = null;
+                setIsConnect(false);
+                isConnecting.current = false;
+            }
         }
-    }
-};
-
-useEffect(() => {
-    const handleBeforeUnload = async () => {
-        await disconnect();
     };
 
-    if (user && !isConnecting.current) {
-        connect();
-    }
+    useEffect(() => {
+        const handleBeforeUnload =  () => {
+             disconnect();
+        };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+        if (user && !isConnecting.current) {
+            connect();
+        }
 
-    return () => {
-        window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-}, [user]);
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [user, isConnecting]);
     const onMessageRecei = (payload) =>{
         const receivedMessage = JSON.parse(payload.body);
         setMessageData(prevData => ({
@@ -218,7 +231,9 @@ useEffect(() => {
             token: token,
             query: keyword
         }
-        dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
+        if(!isOpenManageChat) {
+            dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
+        }
     }
     const handleSelectUser = (userChatWith) => {
         setCurrentChat({show: true});
@@ -227,6 +242,7 @@ useEffect(() => {
             token: token,
             id :userChatWith.id
         } 
+        setUserInChat([userChatWith?.id]);
         dispatch(getSingleChat(chatData))
         // xử lý với trường hợp là mở chat room trong lúc tìm kiếm
         setIsSelectUserSearch(true);
@@ -244,6 +260,7 @@ useEffect(() => {
             token: token,
             id :userChatWith.id
         } 
+        setUserInChat([userChatWith?.id]);
         dispatch(getSingleChat(chatData))
         // chỉ load tin nhắn khi mở chat room lần đầu
         setIsOpenChatFirst(true);
@@ -257,6 +274,8 @@ useEffect(() => {
             token: token,
             chatId:  group?.chatId,
         }
+        const usersInGroup = group?.userChat?.map((u) => {return u?.user.id});
+        setUserInChat(usersInGroup);
         dispatch(getChatById(chatData));
         // chỉ load tin nhắn khi mở chat room lần đầu
         setIsOpenChatFirst(true);
@@ -353,6 +372,7 @@ useEffect(() => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/signin')
+        disconnect();
     };
     const handleCreateGroup = (isShow) => {
         setIsGroup(isShow)
@@ -396,11 +416,13 @@ useEffect(() => {
         }
         // send socket
         if(message && stompClient.current && isSend) {
+            console.log("userInChat",userInChat)
             stompClient.current.publish({
                 destination: '/app/message',
                 body: JSON.stringify({
                     ...messagesWithAvatar[messagesWithAvatar?.length - 1],
-                    chatId: currentChat?.chatId
+                    chatId: currentChat?.chatId,
+                    receiverIds : userInChat,
                 }),
                 headers: { 
                     'content-type': 'application/json'
@@ -451,9 +473,25 @@ useEffect(() => {
         dispatch(getAllUser(token))
       },[])
 
-    useEffect(() => {
-                        console.log(onlineUsers)
-    }, [onlineUsers])
+   useEffect(() => {
+    if (onlineUsers.length > 0 && user?.id) {
+        const chatsWithOnlineStatus = chats?.map(chat => {
+            // Kiểm tra xem có bất kỳ user nào (không phải mình) đang online không
+            const hasOnlineUser = chat?.userChat?.some(userChat => 
+                userChat?.user?.id && 
+                userChat.user.id !== user.id && 
+                onlineUsers.includes(userChat.user.id)
+            );
+            
+            return {
+                ...chat,
+                online: !!hasOnlineUser 
+            };
+        });
+
+        setEnhanceChats(chatsWithOnlineStatus || []);
+    }
+}, [onlineUsers, chats, user?.id]);
 
   return (
     <div className='relative h-screen bg-slate-300 '>
@@ -520,7 +558,7 @@ useEffect(() => {
                         </div>
                         {/* Scrollable Chat List */}
                         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                        {loading ? (
+                        {loading && !isOpenManageChat ? (
                             <p>Loading...</p>
                             ) : search !== '' ? (
                             users?.length > 0 ? (
@@ -529,7 +567,7 @@ useEffect(() => {
                                     if(item?.id == user?.id) return;
                                     return (
                                     <div key={item.id} onClick={() => handleSelectUser(item)}>
-                                    <ChatCard user={item} isHide={true} />
+                                    <ChatCard user={item} isHide={true} isOnline={onlineUsers.includes(item?.id)} />
                                     </div>
                                 )}
                             )}
@@ -540,8 +578,8 @@ useEffect(() => {
                                 </div>
                             )
                             ) : (
-                            chats?.length > 0 ? (
-                                chats.map((chat, index) => {
+                            enhancedChats?.length > 0 ? (
+                                enhancedChats.map((chat, index) => {
                                 if (!chat.group) {
                                     const otherUser = chat.userChat.find(uc => uc.user.id !== user?.id)?.user;
                                     return (
@@ -552,6 +590,7 @@ useEffect(() => {
                                             time={chat?.userMessages?.at(-1)?.message?.timestamp}
                                             messageLast={chat?.userMessages?.at(-1)?.message?.content}
                                             isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
+                                            isOnline={chat?.online}
                                         />
                                     </div>
                                     );
@@ -560,6 +599,7 @@ useEffect(() => {
                                     chat_name: chat?.chat_name,
                                     chat_image: chat?.chat_image,
                                     chatId: chat?.id,
+                                    userChat: chat?.userChat,
                                     };
                                     return (
                                     <div key={chat.id || index} onClick={() => handleSelectChatCardGroup(group)}>
@@ -568,6 +608,7 @@ useEffect(() => {
                                                  time={chat?.userMessages?.at(-1)?.message?.timestamp}
                                                  messageLast={chat?.userMessages?.at(-1)?.message?.content}
                                                  isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
+                                                 isOnline={chat?.online}
                                                  />
                                     </div>
                                     );
@@ -717,10 +758,9 @@ useEffect(() => {
       />
       <GroupManagementModal open={isOpenManageChat}
                             handleClose={() => setIsOpenManageChat(false)} 
-                            chatId = {currentChat?.chatId} 
+                            chat = {chat} 
                             token = {token} 
-                            groupNameCurrent={currentChat?.chat_name}
-                            stompClient = {stompClient.current}
+                            stompClient = {stompClient?.current}
                             chat_image={userChatWith?.chat_image}
         />
     </div>

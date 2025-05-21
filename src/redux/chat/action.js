@@ -120,3 +120,51 @@ export const renameGroup = (chatData) => async (dispatch) => {
     dispatch({ type: "RENAME_GROUP_FAILURE", payload: err.message });
   }
 };
+export const addUserToGroup = (data) => async (dispatch) => {
+  dispatch({ type: "ADD_USER_GROUP_REQUEST" });
+  try {
+    const res = await fetch(
+      `${BASE_API_URL}/api/chats/${data?.chatId}/add/${data?.userId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data?.token}`,
+        },
+      }
+    );
+    const resData = await res.json();
+    console.log(resData);
+    if (res.ok) {
+      dispatch({ type: "ADD_USER_GROUP_SUCCESS", payload: resData.message });
+    } else {
+      dispatch({ type: "ADD_USER_GROUP_FAILURE", payload: resData.message });
+    }
+  } catch (err) {
+    dispatch({ type: "ADD_USER_GROUP_FAILURE", payload: err.message });
+  }
+};
+export const removeUserFromGroup = (data) => async (dispatch) => {
+  dispatch({ type: "REMOVE_USER_GROUP_REQUEST" });
+  try {
+    const res = await fetch(
+      `${BASE_API_URL}/api/chats/${data?.chatId}/remove/${data?.userId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data?.token}`,
+        },
+      }
+    );
+    const resData = await res.json();
+    console.log(resData);
+    if (res.ok) {
+      dispatch({ type: "REMOVE_USER_GROUP_SUCCESS", payload: resData.message });
+    } else {
+      dispatch({ type: "REMOVE_USER_GROUP_FAILURE", payload: resData.message });
+    }
+  } catch (err) {
+    dispatch({ type: "REMOVE_USER_GROUP_FAILURE", payload: err.message });
+  }
+};

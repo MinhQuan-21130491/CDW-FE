@@ -15,12 +15,15 @@ import {
   CircularProgress,
   styled,
   Snackbar,
-  Alert
+  Alert,
+  ListItemAvatar,
+  Avatar
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
-import { renameGroup } from '../redux/chat/action';
+import { addUserToGroup, removeUserFromGroup, renameGroup } from '../redux/chat/action';
+import { searchUser } from '../redux/user/action';
 
 const LoadingOverlay = styled('div')({
   position: 'absolute',
@@ -37,55 +40,65 @@ const LoadingOverlay = styled('div')({
   borderRadius: '2px',
 });
 
-export default function GroupManagementModal({ open, handleClose, chatId, token, groupNameCurrent, chat_image, stompClient }) {
+export default function GroupManagementModal({ open, handleClose, chat, token, chat_image, stompClient }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [groupName, setGroupName] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
   const {message, loading} = useSelector(state => state.chat);
   const [click, setClick] = useState(false);
   const [openSnackBar, setOpenSnackBar] = useState(false);
-  const [status, setStatus] = useState(false);
+  const [isDisable, setIsDisable] = useState(true);
+  const [isShow, setIsShow] = useState(false);
+  const { users, error } = useSelector(state => state.user);
+  const [usersInSearch, setUsersInSearch] = useState();
+  const [usersInGroup, setUsersInGroup] = useState();
+  const [status, setStatus] = useState();
+  const [id, setId] = useState();
   const dispatch = useDispatch();
 
   const handleSnackBarClose = () => {
     setOpenSnackBar(false);
   };
-  const dummyUsers = [
-    { id: 1, name: 'Nguyễn Văn A' },
-    { id: 2, name: 'Trần Thị B' },
-    { id: 3, name: 'Lê Văn C' },
-    { id: 4, name: 'Phạm Thị D' }
-  ];
 
   const handleRename = () => {
     const data = {
         token: token,
-        chatId: chatId,
+        chatId: chat?.id,
         newName: groupName,
     }
     dispatch(renameGroup(data));
     setClick(true);
   };
 
-  const handleAddMember = (user) => {
-    console.log('Thêm thành viên:', user);
+  const handleAddMember = (userId) => {
+    const data = {
+       token: token,
+       chatId: chat?.id,
+       userId: userId,
+    }
+    setId(userId);
+    dispatch(addUserToGroup(data));
+    setClick(true);
   };
-
-  const handleRemoveMember = (user) => {
-    console.log('Xóa thành viên:', user);
+  const handleSearch = (keyword) => {
+          const data = {
+              token: token,
+              query: keyword
+          }
+      dispatch(searchUser(data));  // Gọi action tìm kiếm người dùng
+  }
+  const handleRemoveMember = (userId) => {
+    const data = {
+       token: token,
+       chatId: chat?.id,
+       newName: userId,
+    }
+    dispatch(removeUserFromGroup(data));
   };
-
-  const filteredUsers = dummyUsers.filter(u =>
-    u.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  useEffect(() => {
-    setGroupName(groupNameCurrent);
-  }, [groupNameCurrent]);
 
   useEffect(() => {
         if(message === "Rename group successfully" && click) {
-        stompClient.current.publish({
+        stompClient.publish({
             destination: '/app/notification',
             body: JSON.stringify({
                 name_request: "change group name",
@@ -98,10 +111,42 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
             }
         });
           setClick(false);   
-          setStatus(true);
+          setIsShow(true);
           setOpenSnackBar(true);
+          setIsDisable(true);
+          setStatus("Thay đổi tên nhóm thành công")
+        }else if(message === "Add user to group success" && click) {
+           stompClient.publish({
+            destination: '/app/broadcast-notification',
+            body: JSON.stringify({
+                 id: id,
+                 message: "Add user to group success"
+              }),
+            headers: { 
+                'content-type': 'application/json'
+            }
+        });
+          // setClick(false);   
+          setIsShow(true);
+          setOpenSnackBar(true);
+          setIsDisable(true);
+          setStatus("Thêm thành viên thành công");
+          setClick(false);   
         }
   }, [message, click])
+
+  useEffect(() => {
+    const temp = chat?.userChat?.map((u) => {return u?.user?.id});
+    const usersTemp = users.filter((user) => {
+      return !temp?.includes(user?.id);
+    })
+    setUsersInSearch(usersTemp);
+  }, [users, chat])
+
+  useEffect(() => {
+    const usersInGroup = chat?.userChat?.map((u) => {return u?.user});
+    setUsersInGroup(usersInGroup);
+  }, [chat])
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       {loading && (
@@ -124,10 +169,11 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
               label= "Tên nhóm mới"
               fullWidth
               value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
+              onChange={(e) => {setGroupName(e.target.value) 
+                               setIsDisable(false)}}
               sx={{ mb: 2 }}
             />
-            <Button disabled = {groupNameCurrent === groupName ? true :false} variant="contained" onClick={handleRename}>Lưu</Button>
+            <Button disabled = {isDisable} variant="contained" onClick={handleRename}>Lưu</Button>
           </Box>
         )}
 
@@ -138,20 +184,26 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
               label="Tìm kiếm người dùng"
               fullWidth
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  handleSearch(e.target.value)
+              }}
               sx={{ mb: 2 }}
             />
             <List>
-              {filteredUsers.map(user => (
+              {usersInSearch?.map(user => (
                 <ListItem
                   key={user.id}
                   secondaryAction={
-                    <IconButton onClick={() => handleAddMember(user)}>
+                    <IconButton onClick={() => handleAddMember(user.id)}>
                       <PersonAddIcon />
                     </IconButton>
                   }
                 >
-                  <ListItemText primary={user.name} />
+                  <ListItemAvatar>
+                    <Avatar alt="Avatar" src={user?.profile_picture} />
+                  </ListItemAvatar>
+                  <ListItemText primary={user?.full_name} />
                 </ListItem>
               ))}
             </List>
@@ -162,16 +214,19 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
         {tabIndex === 2 && (
           <Box>
             <List>
-              {dummyUsers.map(user => (
+              {usersInGroup.map(user => (
                 <ListItem
                   key={user.id}
                   secondaryAction={
-                    <IconButton onClick={() => handleRemoveMember(user)}>
+                    <IconButton onClick={() => handleRemoveMember(user.id)}>
                       <DeleteIcon />
                     </IconButton>
                   }
                 >
-                  <ListItemText primary={user.name} />
+                  <ListItemAvatar>
+                    <Avatar alt="Avatar" src={user?.profile_picture} />
+                  </ListItemAvatar>
+                  <ListItemText primary={user?.full_name} />
                 </ListItem>
               ))}
             </List>
@@ -184,7 +239,7 @@ export default function GroupManagementModal({ open, handleClose, chatId, token,
               onClose={handleSnackBarClose}
             >
               <Alert onClose={handleSnackBarClose} severity={status ? 'success' : 'error'} sx={{ width: '100%' }}>
-                {status ? 'Thay đổi tên nhóm thành công!' : 'Thay đổi tên nhóm thất bại!'}
+                {isShow ? status : 'Đã xảy ra lỗi'}
               </Alert>
       </Snackbar>
     </Dialog>
