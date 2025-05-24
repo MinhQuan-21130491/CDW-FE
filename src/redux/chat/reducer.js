@@ -16,7 +16,7 @@ export const chatReducer = (state = initialState, action) => {
     case "RENAME_GROUP_REQUEST":
     case "ADD_USER_GROUP_REQUEST":
     case "REMOVE_USER_GROUP_REQUEST":
-      return { ...state, loading: true };
+      return { ...state, loading: true, message: "" };
 
     case "CREATE_CHAT_GROUP_SUCCESS":
       return {
@@ -74,7 +74,12 @@ export const chatReducer = (state = initialState, action) => {
     case "RENAME_GROUP_FAILURE":
     case "ADD_USER_GROUP_FAILURE":
     case "REMOVE_USER_GROUP_FAILURE":
-      return { ...state, loading: false, error: action.payload };
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+        message: action.payload,
+      };
 
     default:
       return state;

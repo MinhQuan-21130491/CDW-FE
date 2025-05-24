@@ -11,22 +11,22 @@ import { IoIosClose } from "react-icons/io";
 import { FaImage } from "react-icons/fa";
 import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
-import { Menu, MenuItem } from '@mui/material'
+import { Alert, Menu, MenuItem, Snackbar } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
 import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
 import { getAllUser, searchUser } from '../redux/user/action'
 import UserCard from '../components/UserCard'
 import { sendMessage, sendMessageGroup } from '../redux/message/action'
-import { getAllChat, getChatById, getSingleChat } from '../redux/chat/action'
+import { getAllChat, getChatById, getSingleChat, removeUserFromGroup } from '../redux/chat/action'
 import EmojiPicker from "emoji-picker-react";
 import SockJS from 'sockjs-client/dist/sockjs'
 import { Client } from '@stomp/stompjs';
-
-import {over} from 'stompjs'
 import StatusModal from './StatusModal'
 import GroupManagementModal from '../components/ManageChatGroup'
 import { BASE_API_URL } from '../config/api'
+import { ViewMember } from '../components/ViewMember'
+import AlertDialog from '../components/AlertDialog'
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -40,6 +40,7 @@ export default function HomePage() {
     const { users, error, loading } = useSelector(state => state.user);
     const { response:message, error: errorMsg, loading: loadingMsg } = useSelector(state => state.message);
     const { chat, error: errorChat, loading: loadingChat } = useSelector(state => state.chat);
+    const { message:msg } = useSelector(state => state.chat);
     const { chats, error: errorChats, loading: loadingChats } = useSelector(state => state.chat);
     const [userChatWith, setUserChatWith] = useState();
     const [messageData, setMessageData] = useState({userChat:'', userMessages:''});
@@ -58,7 +59,21 @@ export default function HomePage() {
     const [userInChat, setUserInChat] = useState();
     const stompClient = useRef(null);
     const isConnecting = useRef(false);
-    console.log(user?.id)
+    const [openSnackBar, setOpenSnackBar] = useState(false);
+    const [openViewMember, setOpenViewMember] = useState(false);
+    const [usersInGroup, setUsersInGroup] = useState();
+    const [openAlertDialog, setOpenAlertDialog] = useState(false);
+    const status = useRef("");
+    const handleSnackBarClose = () => {
+        setOpenSnackBar(false);
+    };
+     const handleOpenViewMember = () => {
+        setOpenViewMember(true);
+      };
+      const handCloseViewMember = () => {
+        setOpenViewMember(false);
+      };
+
     const handleOpenStatusModal = () => {
         setStatusModalOpen(true);
       };
@@ -66,6 +81,13 @@ export default function HomePage() {
     const handleCloseStatusModal = () => {
         setStatusModalOpen(false);
       };
+    const handleOpenAlertDialog = () => {
+        handleCloseChat();
+        setOpenAlertDialog(true);
+    }
+    const handleCloseAlertDialog = () => {
+        setOpenAlertDialog(false);
+    }
 
     //websocket
     // xử lý render lại UI list chat
@@ -84,10 +106,12 @@ export default function HomePage() {
     }
     const onReceiBroadcast = (payload) => {
         const res = JSON.parse(payload.body);
-        if(res?.message === "Add user to group success")
-            console.log("ress", currentChat.id);
+        if(res?.message === "Add user to group success" || "Remove user in group successfully" || "Out group successfully")
         dispatch(getAllChat({token: token, userId: user?.id}))
 
+    }
+    const reloadUserInChat = () => {
+        dispatch(getChatById({token: token, chatId: currentChat.chatId}))
     }
     const connect = () => {
         if (stompClient.current?.connected || isConnecting.current) {
@@ -115,14 +139,6 @@ export default function HomePage() {
         client.onConnect = (frame) => {
             console.log("✅ Connected to WebSocket");
             setIsConnect(true);
-            
-            // // Gửi thông báo online
-            // client.publish({
-            //     destination: "/app/init-online-users",
-            //     body: JSON.stringify({}) 
-            // });
-
-            // Subscribe và lưu lại subscription
             const onlineUsersSub = client.subscribe("/topic/online-users", (message) => {
                 try {
                     const userIds = JSON.parse(message.body);
@@ -136,7 +152,7 @@ export default function HomePage() {
             const notificationSub = client.subscribe("/topic/change", onChange);
             const broadcastNotificationToUser = client.subscribe("/topic/notification/" + user.id, onReceiBroadcast) ;
             // Lưu các subscription để hủy sau này
-            client.subscriptions.push(onlineUsersSub, notificationSub,broadcastNotificationToUser );
+            client.subscriptions.push(onlineUsersSub, notificationSub,broadcastNotificationToUser,messageSub );
 
             // Sau khi subscribe
             setTimeout(() => {
@@ -268,7 +284,10 @@ export default function HomePage() {
         setIsSend(false);
     }
     const handleSelectChatCardGroup = (group) => {
-        setCurrentChat({show: true, chatId: group?.chatId, chat_name: group?.chat_name});
+        const isAdmin = group?.userChat?.some(uc => {
+          return uc.user.id === user?.id && uc.admin
+        });
+        setCurrentChat({show: true, chatId: group?.chatId, chat_name: group?.chat_name, isAdmin: isAdmin});
         setUserChatWith(group);
         const chatData = {
             token: token,
@@ -491,8 +510,40 @@ export default function HomePage() {
 
         setEnhanceChats(chatsWithOnlineStatus || []);
     }
-}, [onlineUsers, chats, user?.id]);
-
+    }, [onlineUsers, chats, user?.id]);
+    const handleOutChat = () => {
+        const data = {
+               token: token,
+               chatId: currentChat?.chatId,
+               userId: user?.id,
+            }
+        dispatch(removeUserFromGroup(data));
+        handleCloseAlertDialog();
+    }
+    const handleViewMember = () => {
+        handleOpenViewMember();
+    }
+    useEffect(() => {
+        if(msg === "Out group successfully") {
+            stompClient.current.publish({
+              destination: '/app/broadcast-notification',
+              body: JSON.stringify({
+                  id: user?.id,
+                  message: "Out group successfully"
+                }),
+              headers: { 
+                  'content-type': 'application/json'
+              }
+            });
+            setOpenSnackBar(true);
+            setCurrentChat({show:false});
+            status.current = "Rời nhóm thành công"
+        }
+    }, [msg])
+      useEffect(() => {
+        const usersInGroup = chat?.userChat?.map((u) => {return u?.user});
+        setUsersInGroup(usersInGroup);
+      }, [chat, users])
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -514,7 +565,6 @@ export default function HomePage() {
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
                             <TbCircleDashed onClick={handleOpenStatusModal} className='cursor-pointer'/>
-                            <BiCommentDetail className='cursor-pointer'/>
                             <div>
                                 <BsThreeDotsVertical 
                                     id="basic-button"
@@ -591,6 +641,7 @@ export default function HomePage() {
                                             messageLast={chat?.userMessages?.at(-1)?.message?.content}
                                             isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
                                             isOnline={chat?.online}
+                                            typeMessageLast = {chat?.userMessages?.at(-1)?.message?.type}
                                         />
                                     </div>
                                     );
@@ -668,7 +719,14 @@ export default function HomePage() {
                                             'aria-labelledby': 'basic-button',
                                             }}
                                         >
-                                            <MenuItem onClick={() => handleManageChat()}>{'Quản lý nhóm'}</MenuItem>                                          
+                                            {currentChat?.isAdmin ? (
+                                                <MenuItem onClick={() => handleManageChat()}>Quản lý nhóm</MenuItem>                                          
+                                            ): (
+                                                <>
+                                                    <MenuItem onClick={() => handleViewMember()}>Xem thành viên</MenuItem>                                          
+                                                    <MenuItem onClick={() => handleOpenAlertDialog()}>Rời nhóm</MenuItem>                                          
+                                                </>
+                                            )}
                                         </Menu>
                                     </div>
                                     )}
@@ -762,7 +820,24 @@ export default function HomePage() {
                             token = {token} 
                             stompClient = {stompClient?.current}
                             chat_image={userChatWith?.chat_image}
+                            reloadUserInChat = {reloadUserInChat}
         />
+        <Snackbar
+            open={openSnackBar} 
+            autoHideDuration={3000} 
+            onClose={handleSnackBarClose}
+        >
+            <Alert onClose={handleSnackBarClose} severity={status.current ? 'success' : 'error'} sx={{ width: '100%' }}>
+            {status.current || "Đã xảy ra lỗi"}
+            </Alert>
+        </Snackbar>
+        <AlertDialog openAlertDialog ={openAlertDialog} 
+                     handleCloseAlertDialog = {handleCloseAlertDialog} 
+                     title = "Xác nhận rời nhóm" 
+                     content = "Bạn có chắc chắn muốn rời khỏi nhóm này không?"  
+                     handleConfirm = {handleOutChat} 
+                     handleCancel = {handleCloseAlertDialog}/>
+        <ViewMember openViewMember={openViewMember} handleCloseViewMember={handCloseViewMember} usersInGroup = {usersInGroup} />
     </div>
   )
 }

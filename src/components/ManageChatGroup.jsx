@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import { addUserToGroup, removeUserFromGroup, renameGroup } from '../redux/chat/action';
 import { searchUser } from '../redux/user/action';
+import AlertDialog from './AlertDialog';
 
 const LoadingOverlay = styled('div')({
   position: 'absolute',
@@ -40,7 +41,7 @@ const LoadingOverlay = styled('div')({
   borderRadius: '2px',
 });
 
-export default function GroupManagementModal({ open, handleClose, chat, token, chat_image, stompClient }) {
+export default function GroupManagementModal({ open, handleClose, chat, token, chat_image, stompClient, reloadUserInChat }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [groupName, setGroupName] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,10 +50,19 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [isDisable, setIsDisable] = useState(true);
   const [isShow, setIsShow] = useState(false);
-  const { users, error } = useSelector(state => state.user);
+  const {users, error } = useSelector(state => state.user);
   const [usersInSearch, setUsersInSearch] = useState();
   const [usersInGroup, setUsersInGroup] = useState();
-  const [status, setStatus] = useState();
+  const [openAlertDialog, setOpenAlertDialog] = useState(false);  
+  const [userId, setUserId] = useState();
+  const handleOpenAlertDialog = (userId) => {
+        setUserId(userId);
+        setOpenAlertDialog(true);
+  }
+  const handleCloseAlertDialog = () => {
+        setOpenAlertDialog(false);
+  }
+  const status = useRef("");
   const [id, setId] = useState();
   const dispatch = useDispatch();
 
@@ -74,7 +84,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
     const data = {
        token: token,
        chatId: chat?.id,
-       userId: userId,
+       userId: 100,
     }
     setId(userId);
     dispatch(addUserToGroup(data));
@@ -91,9 +101,12 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
     const data = {
        token: token,
        chatId: chat?.id,
-       newName: userId,
+       userId: userId,
     }
     dispatch(removeUserFromGroup(data));
+    setId(userId);
+    setClick(true);
+    handleCloseAlertDialog();
   };
 
   useEffect(() => {
@@ -102,7 +115,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
             destination: '/app/notification',
             body: JSON.stringify({
                 name_request: "change group name",
-                chatId: chatId,
+                chatId: chat?.id,
                 chat_name: groupName,
                 chat_image: chat_image
             }),
@@ -114,7 +127,8 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
           setIsShow(true);
           setOpenSnackBar(true);
           setIsDisable(true);
-          setStatus("Thay đổi tên nhóm thành công")
+          // setStatus("Thay đổi tên nhóm thành công")
+          status.current = "Thay đổi tên nhóm thành công";
         }else if(message === "Add user to group success" && click) {
            stompClient.publish({
             destination: '/app/broadcast-notification',
@@ -126,27 +140,49 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
                 'content-type': 'application/json'
             }
         });
-          // setClick(false);   
+          reloadUserInChat();  
           setIsShow(true);
+          status.current = "Thêm thành viên thành công";
           setOpenSnackBar(true);
-          setIsDisable(true);
-          setStatus("Thêm thành viên thành công");
           setClick(false);   
+        }else if(message === "Remove user in group successfully" && click) {
+           stompClient.publish({
+              destination: '/app/broadcast-notification',
+              body: JSON.stringify({
+                  id: id,
+                  message: "Remove user in group successfully"
+                }),
+              headers: { 
+                  'content-type': 'application/json'
+              }
+            });
+          reloadUserInChat();  
+          setIsShow(true);
+          status.current = "Xóa thành viên thành công";
+          setOpenSnackBar(true);
+          setClick(false);   
+        }else if(message === "User already in group" && click) {
+          status.current = "Thành viên đã tồn tại trong nhóm của bạn";
+          setOpenSnackBar(true);
+          setClick(false);   
+          reloadUserInChat();  
         }
   }, [message, click])
 
   useEffect(() => {
-    const temp = chat?.userChat?.map((u) => {return u?.user?.id});
-    const usersTemp = users.filter((user) => {
-      return !temp?.includes(user?.id);
-    })
-    setUsersInSearch(usersTemp);
+    if(users && chat) {
+        const temp = chat?.userChat?.map((u) => {return u?.user?.id});
+        const usersTemp = users.filter((user) => {
+          return !temp?.includes(user?.id);
+        })
+        setUsersInSearch(usersTemp);
+    }
   }, [users, chat])
 
   useEffect(() => {
     const usersInGroup = chat?.userChat?.map((u) => {return u?.user});
     setUsersInGroup(usersInGroup);
-  }, [chat])
+  }, [chat, users])
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       {loading && (
@@ -159,7 +195,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
         <Tabs value={tabIndex} onChange={(e, val) => setTabIndex(val)} sx={{ mb: 2 }}>
           <Tab label="Đổi tên nhóm" />
           <Tab label="Thêm thành viên" />
-          <Tab label="Xóa thành viên" />
+          <Tab label="Xem thành viên" />
         </Tabs>
 
         {/* Tab 1: Rename group */}
@@ -191,9 +227,9 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
               sx={{ mb: 2 }}
             />
             <List>
-              {usersInSearch?.map(user => (
+              {usersInSearch?.map((user, index) => (
                 <ListItem
-                  key={user.id}
+                  key={index}
                   secondaryAction={
                     <IconButton onClick={() => handleAddMember(user.id)}>
                       <PersonAddIcon />
@@ -214,11 +250,11 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
         {tabIndex === 2 && (
           <Box>
             <List>
-              {usersInGroup.map(user => (
+              {usersInGroup.map((user, index) => (
                 <ListItem
-                  key={user.id}
+                  key={index}
                   secondaryAction={
-                    <IconButton onClick={() => handleRemoveMember(user.id)}>
+                    <IconButton onClick={() => handleOpenAlertDialog(user.id)}>
                       <DeleteIcon />
                     </IconButton>
                   }
@@ -233,15 +269,21 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
           </Box>
         )}
       </DialogContent>
-      <Snackbar 
-              open={openSnackBar} 
-              autoHideDuration={6000} 
-              onClose={handleSnackBarClose}
-            >
-              <Alert onClose={handleSnackBarClose} severity={status ? 'success' : 'error'} sx={{ width: '100%' }}>
-                {isShow ? status : 'Đã xảy ra lỗi'}
-              </Alert>
+      <Snackbar
+        open={openSnackBar} 
+        autoHideDuration={3000} 
+        onClose={handleSnackBarClose}
+      >
+        <Alert onClose={handleSnackBarClose} severity={status.current ? 'success' : 'error'} sx={{ width: '100%' }}>
+          {isShow ? status.current : 'Đã xảy ra lỗi'}
+        </Alert>
       </Snackbar>
+        <AlertDialog openAlertDialog ={openAlertDialog} 
+                     handleCloseAlertDialog = {handleCloseAlertDialog} 
+                     title = "Xác nhận xóa thành viên" 
+                     content = "Bạn có chắc chắn muốn xóa thành viên này không?"  
+                     handleConfirm = {() => handleRemoveMember(userId)} 
+                     handleCancel = {handleCloseAlertDialog}/>     
     </Dialog>
   );
 }

@@ -1,8 +1,27 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaCircle } from "react-icons/fa";
 import { useSelector } from 'react-redux';
 
-export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline}) {
+export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast}) {
+  const [content, setContent] = useState();;
+  useEffect(() => {
+      if(typeMessageLast) {
+        console.log(typeMessageLast)
+        if(typeMessageLast === "text") {
+          if(isMe) {
+            setContent("Bạn: " + messageLast);
+          }else {
+            setContent(messageLast);
+          }
+        }else {
+          if(isMe) {
+            setContent("Bạn: Đã gửi hình ảnh");
+          }else {
+            setContent("Đã gửi hình ảnh");
+          }
+        }
+      }
+  }, [messageLast, typeMessageLast])
   return (
     <div className='px-3 pb-2 cursor-pointerw-full cursor-pointer'>
         {/* Line separator */}
@@ -21,7 +40,7 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
                      {!isHide && (
                         <div className='w-[100%] flex justify-between'>
                             <div className='w-[60%]'>
-                                <p className='text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap'>{isMe? "Bạn: " + messageLast || 'Đã gửi hình ảnh':messageLast || 'Đã gửi hình ảnh'}</p>
+                                <p className='text-xs text-gray-400 text-ellipsis overflow-hidden whitespace-nowrap'>{content}</p>
                             </div>
                             <div className='w-[30%] flex space-x-1 items-center'>
                               <p className='text-xs text-gray-400'>{time && formatTime(time) || ''}</p>
