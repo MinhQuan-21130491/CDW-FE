@@ -133,7 +133,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
            stompClient.publish({
             destination: '/app/broadcast-notification',
             body: JSON.stringify({
-                 id: id,
+                 receiverIds: [id],
                  message: "Add user to group success"
               }),
             headers: { 
@@ -149,7 +149,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
            stompClient.publish({
               destination: '/app/broadcast-notification',
               body: JSON.stringify({
-                  id: id,
+                  receiverIds: [id],
                   message: "Remove user in group successfully"
                 }),
               headers: { 

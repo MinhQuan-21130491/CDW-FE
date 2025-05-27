@@ -5,11 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { createaGroupChat } from '../redux/chat/action';
 import { Alert, Snackbar } from '@mui/material';
 
-function NewGroup({handleSetNewGroup, members, handleNavigate}) {
+function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const usersId = Array.from(members.values()).map(user => user.id);
-  const [flag, setFlag] = useState(false);
+  const [click, setClick] = useState(false);
   const [groupName, setGroupName] = useState("");
-  const {user} = useSelector(state => state.auth);
   const [picture, setPicture] = useState('');
   const[openSnackBar, setOpenSnackBar] = useState(false);
   const[status, setStatus] = useState(false );
@@ -25,6 +24,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate}) {
         chat_image: picture,
       }
     }
+    setClick(true);
     dispatch(createaGroupChat(chatData));
   }
 
@@ -43,17 +43,31 @@ function NewGroup({handleSetNewGroup, members, handleNavigate}) {
   }
 
   useEffect(() => {
-        if(statusCreateGroup){
-            if(statusCreateGroup == 200) {
-                setStatus(true)
-                setOpenSnackBar(true)
+        if(statusCreateGroup && click){
+            if(statusCreateGroup == 200 ) {
+                setStatus(true);
+                setOpenSnackBar(true);
+                setClick(false);
+                stompClient.publish({
+                  destination: '/app/broadcast-notification',
+                  body: JSON.stringify({
+                      receiverIds: usersId,
+                      message: "You have been added to group"
+                    }),
+                  headers: { 
+                      'content-type': 'application/json'
+                  }
+                });
                 const timeoutId = setTimeout(() => handleNavigate(false), 2000);
-          
+
                 // Optional: Clear timeout if component unmounts early
                 return () => clearTimeout(timeoutId);
             }else{
-                setStatus(false)
-                setOpenSnackBar(true)
+                if(click) {
+                  setStatus(false);
+                  setOpenSnackBar(true);
+                  setClick(false);
+                }
             }
         }
     },[statusCreateGroup])  

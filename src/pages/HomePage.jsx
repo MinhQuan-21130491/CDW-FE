@@ -8,7 +8,7 @@ import { logo } from '../assets'
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import MessageCard from '../components/MessageCard'
 import { IoIosClose } from "react-icons/io";
-import { FaImage } from "react-icons/fa";
+import { FaCircle, FaImage } from "react-icons/fa";
 import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
 import { Alert, Menu, MenuItem, Snackbar } from '@mui/material'
@@ -106,8 +106,11 @@ export default function HomePage() {
     }
     const onReceiBroadcast = (payload) => {
         const res = JSON.parse(payload.body);
-        if(res?.message === "Add user to group success" || "Remove user in group successfully" || "Out group successfully")
-        dispatch(getAllChat({token: token, userId: user?.id}))
+        if(res?.message === "Add user to group success" ||
+                            "Remove user in group successfully" || 
+                            "Out group successfully" || 
+                            "You have been add to group") {
+        dispatch(getAllChat({token: token, userId: user?.id}))}
 
     }
     const reloadUserInChat = () => {
@@ -226,7 +229,7 @@ export default function HomePage() {
         const receivedMessage = JSON.parse(payload.body);
         setMessageData(prevData => ({
             ...prevData,
-            userMessages: [...prevData?.userMessages, receivedMessage],
+            userMessages: [...prevData?.userMessages ?? [], receivedMessage],
         }));        
     }
 
@@ -294,6 +297,7 @@ export default function HomePage() {
             chatId:  group?.chatId,
         }
         const usersInGroup = group?.userChat?.map((u) => {return u?.user.id});
+   
         setUserInChat(usersInGroup);
         dispatch(getChatById(chatData));
         // chỉ load tin nhắn khi mở chat room lần đầu
@@ -338,7 +342,7 @@ export default function HomePage() {
             dispatch(sendMessage(data))
             setIsSend(true);
             setIsOpenChatFirst(false);
-        }   
+        }
         if(chat) {
             if(!chat?.group) {
                 const data = {
@@ -363,6 +367,7 @@ export default function HomePage() {
                     }
                 }
                 dispatch(sendMessageGroup(data))
+                
                 setIsSend(true);
             }
         }
@@ -435,7 +440,6 @@ export default function HomePage() {
         }
         // send socket
         if(message && stompClient.current && isSend) {
-            console.log("userInChat",userInChat)
             stompClient.current.publish({
                 destination: '/app/message',
                 body: JSON.stringify({
@@ -552,7 +556,7 @@ export default function HomePage() {
                 {/* Profile */}
                 {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile}  user={user} onUpdateUser={handleUserUpdate}/></div>)}
                 {/* Create group */}
-                {isGroup && (<CreateGroup handleNavigate = {handleCreateGroup} />)}
+                {isGroup && (<CreateGroup handleNavigate = {handleCreateGroup} onlineUsers={onlineUsers} stompClient = {stompClient.current}/>)}
                 {/* Home */}
                 {!isProfile && !isGroup && (
                     <>
@@ -560,7 +564,10 @@ export default function HomePage() {
                         <div className='flex items-center space-x-3 overflow-hidden'
                             onClick={() => handleNavigateProfile(true)}
                         >
-                            <img className='rounded-full w-10 h-10 object-cover cursor-pointer' src={user?.profile_picture || 'https://static.vecteezy.com/system/resources/thumbnails/024/646/930/small_2x/ai-generated-stray-cat-in-danger-background-animal-background-photo.jpg'}></img>
+                            <div className="relative w-16 h-12">
+                                <img className='rounded-full w-12 h-12 object-cover cursor-pointer' src={user?.profile_picture || 'data:image/png;base64,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'}></img>
+                                <FaCircle className={`absolute bottom-0 left-9 text-green-400 text-xs bg-white rounded-full`} />
+                            </div>
                             <p className='cursor-pointer text-lg '>{user?.full_name}</p>
                         </div>
                         <div className='space-x-2 text-2xl hidden md:flex'>
@@ -660,6 +667,7 @@ export default function HomePage() {
                                                  messageLast={chat?.userMessages?.at(-1)?.message?.content}
                                                  isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
                                                  isOnline={chat?.online}
+                                                 typeMessageLast = {chat?.userMessages?.at(-1)?.message?.type}
                                                  />
                                     </div>
                                     );
@@ -694,7 +702,7 @@ export default function HomePage() {
                             <div className='flex items-center justify-between p-3'>
                                 <div className='flex items-center space-x-3'>
                                     <img
-                                    src={userChatWith?.profile_picture || userChatWith?.chat_image || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s'}
+                                    src={userChatWith?.profile_picture || userChatWith?.chat_image || 'data:image/png;base64,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'}
                                     className='w-10 h-10 rounded-full object-cover'
                                     />
                                     <p>{userChatWith?.full_name || userChatWith?.chat_name || 'Chip'}</p>
@@ -736,7 +744,7 @@ export default function HomePage() {
                         {/* Message section */}
                         <div className='bg-blue-200 h-full w-full overflow-y-scroll'>
                             <div className='py-20 pl-10 pr-4 space-y-2 flex flex-col justify-center '>
-                                {messageData.userMessages && messageData.userMessages.map((item, index) => {
+                                {messageData && messageData?.userMessages && messageData.userMessages.map((item, index) => {
                                 return (
                                     <MessageCard
                                         key={index}
@@ -812,7 +820,8 @@ export default function HomePage() {
         {/* Status Modal */}
       <StatusModal 
         open={statusModalOpen} 
-        onClose={handleCloseStatusModal} 
+        onClose={handleCloseStatusModal}
+        onlineUsers = {onlineUsers}
       />
       <GroupManagementModal open={isOpenManageChat}
                             handleClose={() => setIsOpenManageChat(false)} 
