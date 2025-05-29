@@ -137,7 +137,7 @@ export const addUserToGroup = (data) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: "ADD_USER_GROUP_SUCCESS", payload: resData.message });
     } else {
-      console.log("vo day");
+      console.log(resData.message);
       dispatch({ type: "ADD_USER_GROUP_FAILURE", payload: resData.message });
     }
   } catch (err) {

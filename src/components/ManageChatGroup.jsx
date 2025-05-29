@@ -84,7 +84,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
     const data = {
        token: token,
        chatId: chat?.id,
-       userId: 100,
+       userId: userId,
     }
     setId(userId);
     dispatch(addUserToGroup(data));
@@ -111,6 +111,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
 
   useEffect(() => {
         if(message === "Rename group successfully" && click) {
+        setGroupName("");
         stompClient.publish({
             destination: '/app/notification',
             body: JSON.stringify({
@@ -126,15 +127,13 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
           setClick(false);   
           setIsShow(true);
           setOpenSnackBar(true);
-          setIsDisable(true);
-          // setStatus("Thay đổi tên nhóm thành công")
           status.current = "Thay đổi tên nhóm thành công";
         }else if(message === "Add user to group success" && click) {
            stompClient.publish({
             destination: '/app/broadcast-notification',
             body: JSON.stringify({
                  receiverIds: [id],
-                 message: "Add user to group success"
+                 message: "You have been added to group"
               }),
             headers: { 
                 'content-type': 'application/json'

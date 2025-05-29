@@ -109,7 +109,7 @@ export default function HomePage() {
         if(res?.message === "Add user to group success" ||
                             "Remove user in group successfully" || 
                             "Out group successfully" || 
-                            "You have been add to group") {
+                            "You have been added to group") {
         dispatch(getAllChat({token: token, userId: user?.id}))}
 
     }
@@ -125,7 +125,7 @@ export default function HomePage() {
         isConnecting.current = true;
 
     const client = new Client({
-            webSocketFactory: () => new SockJS(`${BASE_API_URL}/ws?token=${token}`),
+            webSocketFactory: () => new SockJS(`${BASE_API_URL}/ws`),
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,  // Thêm heartbeat để giữ kết nối
             heartbeatOutgoing: 4000,
@@ -450,7 +450,8 @@ export default function HomePage() {
                 headers: { 
                     'content-type': 'application/json'
                 }
-            });        
+            });    
+            setIsSend(false);    
         }
     }, [chat])
 
@@ -539,6 +540,7 @@ export default function HomePage() {
                   'content-type': 'application/json'
               }
             });
+            dispatch(getAllChat({token: token, userId: user?.id}));
             setOpenSnackBar(true);
             setCurrentChat({show:false});
             status.current = "Rời nhóm thành công"
