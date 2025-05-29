@@ -38,12 +38,12 @@ export default function MessageCard({ isReceiUserMessage, content, avatar, showA
             <div className= {images?.length > 1 ?'flex space-x-2 flex-wrap':''}>
               {images && images?.map((item, index) => {
                   return (
-                    <>                    
+                    <div key={index}>                    
                       <img src ={item?.url} 
                         className={images.length > 1 ?'rounded-md border object-cover cursor-pointer w-[80px] h-[80px]':'rounded-md border object-cover cursor-pointer md:max-w-[500px] md:max-h-[500px] max-w-[200px] max-h-[200px]'}
                         onClick={() => handleOpenDialog(item?.url)}
                       /> 
-                    </>
+                    </div>
                   )
                 })}
             </div>
@@ -57,20 +57,8 @@ export default function MessageCard({ isReceiUserMessage, content, avatar, showA
         bg-white rounded-full px-2 py-[2px]  text-center">
         {time}
       </span>
-      <ImageDialog open = {openDialog} handleOnclose={handleCloseDialog} img={imageSelected}/>
+      <ImageDialog  open = {openDialog} handleOnclose={handleCloseDialog} img={imageSelected} />
     </div>
   );
 }
-function formatFullDate(dateString) {
-  const date = new Date(dateString);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  
-  return `${hours}:${minutes} ${day}-${month}-${year}`;
-}
 
-const dateStr = "2025-04-06T19:26:41";
-console.log(formatFullDate(dateStr));  // Output: 19:26 06-04-2025

@@ -24,6 +24,7 @@ import { Alert, Button, Snackbar } from '@mui/material';
             setPicture(reader.result);
           };
           reader.readAsDataURL(file);
+          setClick(false);
         }else {
           // xử lý lỗi sau
         }

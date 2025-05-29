@@ -25,6 +25,7 @@ export default function StatusViewer({ stories, ownerStory}) {
     const [isRemove, setIsRemove] = useState(false);
     const [openSnackBar, setOpenSnackBar] = useState(false);
     const [clickRemove, setClickRemove] = useState(false);
+    console.log(currentIndex)
     // ✅ Xử lý duration
     const handleDuration = (duration) => {
         const isVideo = stories[currentIndex]?.type === 'video';
@@ -95,7 +96,8 @@ export default function StatusViewer({ stories, ownerStory}) {
         setCurrentIndex(0);
         setProgress(0);
         setDurations([]);
-    }, [stories]);
+        console.log("goi ham nay")
+    }, [stories, ownerStory]);
     
     useEffect(() => {
         if(response?.status === 200 && clickRemove) {
@@ -109,7 +111,7 @@ export default function StatusViewer({ stories, ownerStory}) {
     return (
         <div className='flex justify-center items-center bg-[#0b141a] h-[85vh]'>
             <div className="relative h-[80vh] w-[45vh] flex justify-center items-center bg-black overflow-hidden">
-                {stories.length > 0 ? (
+                {stories.length > 0 && stories.length > currentIndex ? (
                     <>
                         <div className='absolute right-0 top-8'>
                             {user?.id == ownerStory && (
@@ -138,7 +140,7 @@ export default function StatusViewer({ stories, ownerStory}) {
 
                         </div>
 
-                        {stories != undefined && stories[currentIndex].type === 'video' ? (
+                        {stories != undefined  && stories[currentIndex].type === 'video' ? (
                             <ReactPlayer
                                 url={stories[currentIndex].url}
                                 onDuration={handleDuration}

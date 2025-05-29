@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 
-export default function StatusModal({ open, onClose}) {
+export default function StatusModal({ open, onClose, onlineUsers}) {
   const {user} = useSelector((state) => state.auth);
   const {users} = useSelector((state) => state.user);
   const [stories, setStories] = useState([]);
@@ -65,17 +65,18 @@ export default function StatusModal({ open, onClose}) {
           }}
         >
           <Box pb={2} onClick = {() => handleViewStories(user?.stories, user?.id)}>
-            <StatusUserCard user={user} isCreate={true}/>
+            <StatusUserCard user={user} isCreate={true} isOnline = {true}/>
           </Box>
           <Divider sx={{ bgcolor: 'rgba(255,255,255)' }} />
           <Box sx={{ overflowY: 'auto', flex: 1 }}>
-            {users?.map((item, index) => {
+            {users && users?.map((item, index) => {
               if(item?.id == user?.id) return;
               return (
-              <Box onClick = {() => handleViewStories(item?.stories, item?.id)}>
-                <StatusUserCard key={index} user ={item}  />
+              <Box key={index} onClick = {() => handleViewStories(item?.stories, item?.id)}>
+                <StatusUserCard key={index} user ={item} isOnline = {onlineUsers.includes(item.id)}/>
               </Box>
               )})}
+              <Box sx = {{paddingBottom: 2}}/>
           </Box>
         </Box>
 
@@ -99,7 +100,7 @@ export default function StatusModal({ open, onClose}) {
           >
             <AiOutlineClose fontSize="large" />
           </IconButton>
-          <StatusViewer stories={stories} ownerStory = {ownerStory}/>
+          <StatusViewer stories={stories} ownerStory = {ownerStory} />
         </Box>
       </Box>
     </Modal>

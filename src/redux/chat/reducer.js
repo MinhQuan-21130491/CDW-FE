@@ -2,6 +2,7 @@ const initialState = {
   chats: [],
   chat: [],
   status: "",
+  message: "",
   loading: false,
   error: null,
 };
@@ -12,7 +13,10 @@ export const chatReducer = (state = initialState, action) => {
     case "GET_CHAT_ALL_REQUEST":
     case "GET_CHAT_BY_ID_REQUEST":
     case "GET_CHAT_SINGLE_REQUEST":
-      return { ...state, loading: true };
+    case "RENAME_GROUP_REQUEST":
+    case "ADD_USER_GROUP_REQUEST":
+    case "REMOVE_USER_GROUP_REQUEST":
+      return { ...state, loading: true, message: "" };
 
     case "CREATE_CHAT_GROUP_SUCCESS":
       return {
@@ -45,11 +49,37 @@ export const chatReducer = (state = initialState, action) => {
         loading: false,
         chat: action.payload,
       };
+    case "RENAME_GROUP_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        message: action.payload,
+      };
+    case "ADD_USER_GROUP_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        message: action.payload,
+      };
+    case "REMOVE_USER_GROUP_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        message: action.payload,
+      };
     case "CREATE_CHAT_GROUP_FAILURE":
     case "GET_CHAT_ALL_FAILURE":
     case "GET_CHAT_BY_ID_FAILURE":
     case "GET_CHAT_SINGLE_FAILURE":
-      return { ...state, loading: false, error: action.payload };
+    case "RENAME_GROUP_FAILURE":
+    case "ADD_USER_GROUP_FAILURE":
+    case "REMOVE_USER_GROUP_FAILURE":
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+        message: action.payload,
+      };
 
     default:
       return state;
