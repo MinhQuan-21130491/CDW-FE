@@ -341,7 +341,7 @@ export default function HomePage() {
             // setFirstChat(true)
             dispatch(sendMessage(data))
             setIsSend(true);
-            setIsOpenChatFirst(false);
+            setIsOpenChatFirst(true);
         }
         if(chat) {
             if(!chat?.group) {
