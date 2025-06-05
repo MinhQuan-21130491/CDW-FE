@@ -88,6 +88,9 @@ export default function HomePage() {
     const handleCloseAlertDialog = () => {
         setOpenAlertDialog(false);
     }
+    const handleNavigateChangePassword = () => { 
+        navigate('/change-password');
+    };
 
     //websocket
     // xử lý render lại UI list chat
@@ -594,6 +597,7 @@ export default function HomePage() {
                                 >
                                     <MenuItem onClick={() => handleNavigateProfile(true)}>Thông tin</MenuItem>
                                     <MenuItem onClick={() => handleCreateGroup(true)}>Tạo nhóm</MenuItem>
+                                    <MenuItem onClick={() => handleNavigateChangePassword()}>Đổi mật khẩu</MenuItem>
                                     <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
                                 </Menu>
                             </div>

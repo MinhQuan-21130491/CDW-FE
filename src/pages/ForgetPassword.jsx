@@ -4,11 +4,9 @@ import{ useRef, useState } from 'react'
 import { IoMdArrowBack } from "react-icons/io";
 import { useNavigate } from 'react-router-dom';
 
-export const ChangePassword = () => {
+export const ForgetPassword = () => {
     const[openSnackBar, setOpenSnackBar] = useState();
-    const[inputCurrentPw, setInputCurrentPw] = useState();
-    const[inputPw, setInputPw] = useState();
-    const[inputConfirmPw, setInputConfirmPw] = useState();
+    const[inputEmail, setInputEmail] = useState();
     const status = useRef();
     const navigate = useNavigate();
     const handleSnackBarClose = () => {
@@ -16,49 +14,28 @@ export const ChangePassword = () => {
     }
     const handleSubmit = (e) => {
         e.preventDefault();
-        dispatch(login({email: inputEmail, password: inputPassword}))
         setClick(true)
       }
-    const handleOnchangeCurrentPw = () => {
+    const handleOnChangeEmail = () => {
         
     }
-    const handleOnchagePw = () => {
-
-    }
-    const handleOnchageConfirmPw = () => {
-
-    }
+ 
   return (
     <div className='bg-[#e8e9ec]'>
         <div className='flex justify-center h-screen items-center relative'>
             <IoMdArrowBack className='absolute top-10 left-10 text-2xl cursor-pointer' onClick={() => navigate(-1)}/>
             <div className='w-[30%] p-10 pt-4 shadow-md bg-white '>
-                <h1 className='font-bold text-xl text-center'>Đổi mật khẩu</h1>
+                <h1 className='font-bold text-xl text-center'>Quên mật khẩu</h1>
                 <form onSubmit={handleSubmit} className='space-y-5'>
                     <div>
-                        <p className='mb-2'>Mật khẩu hiện tại</p>
+                        <p className='mb-2 text-md text-center'>Nhập email đăng ký tài khoản và mật khẩu mới sẽ được gửi về email trong vòng 1-2 phút.</p>
                         <input 
-                        placeholder='Nhập mật khẩu hiện tại'
-                        onChange={handleOnchangeCurrentPw}
-                        value={inputCurrentPw}
+                        placeholder='Nhập email của bạn'
+                        onChange={handleOnChangeEmail}
+                        value={inputEmail}
                         type='text' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
                     </div>
-                    <div>
-                        <p className='mb-2'>Mật khẩu mới</p>
-                        <input 
-                        placeholder='Nhập mật khẩu mới'
-                        onChange={handleOnchagePw}
-                        value={inputPw}
-                        type='text' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
-                    </div>
-                    <div>
-                        <p className='mb-2'>Nhập lại mật khẩu mới</p>
-                        <input 
-                        placeholder='Nhập lại mật khẩu mới'
-                        onChange={handleOnchageConfirmPw}
-                        value={inputConfirmPw}
-                        type='password' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
-                    </div>
+                   
                     <div className='my-5 text-end'>
                     </div>
                     <div >

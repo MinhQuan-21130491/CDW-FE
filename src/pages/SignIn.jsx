@@ -70,8 +70,9 @@ const SignIn = () => {
                         value={inputPassword}
                         type='password' className='p-2 border-2 border-green-600 outline-none w-full rounded-md' />
                     </div>
-                    <div className='my-5 text-end'>
-                    <p className='text-sm '>Bạn chưa có tài khoản? <Link to="/signup    " className='text-sm text-green-600'>Đăng ký</Link></p>
+                    <div className='text-end'>
+                        <Link to="/forget-password" className='text-sm text-green-600'>Quên mật khẩu?</Link>
+                        <p className='text-sm pt-1'>Bạn chưa có tài khoản? <Link to="/signup" className='text-sm text-green-600'>Đăng ký</Link></p>
                     </div>
                     <div >
                         <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng nhập</Button>

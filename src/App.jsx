@@ -1,9 +1,10 @@
 import { Route, Routes } from 'react-router-dom'
 import SignUp from './pages/SignUp'
 import SignIn from './pages/SignIn'
-import StatusViewer from './pages/StatusViewer'
 import ProtectedRoute from './utils/ProtectedRoute'
 import HomePage from './pages/HomePage'
+import { ChangePassword } from './pages/ChangePassword'
+import { ForgetPassword } from './pages/ForgetPassword'
 
 function App() {
 
@@ -20,11 +21,16 @@ function App() {
           }
       />
       
-      <Route path = "/status/:userId"
+      <Route path = "/change-password"
          element = {
             <ProtectedRoute>
-                <StatusViewer/>
+                <ChangePassword/>
             </ProtectedRoute>
+            }
+      />
+      <Route path = "/forget-password"
+         element = {
+                <ForgetPassword/>
             }
       />
     </Routes>
