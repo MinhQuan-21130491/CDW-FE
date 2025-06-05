@@ -44,7 +44,6 @@ export const currentUser = (token) => async (dispatch) => {
       },
     });
     const resData = await res.json();
-    console.log(resData);
     dispatch({ type: REQ_USER, payload: resData });
   } catch (err) {
     console.log(err.message);

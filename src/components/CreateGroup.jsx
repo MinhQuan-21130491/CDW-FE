@@ -1,15 +1,13 @@
-import React, { memo, useEffect, useState } from 'react'
-import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs'
+import {useState } from 'react'
+import { BsArrowLeft, BsArrowRight } from 'react-icons/bs'
 import { SelectedMember } from './SelectedMember';
 import { AiOutlineSearch } from 'react-icons/ai';
-import ChatCard from './ChatCard';
-import StatusUserCard from './StatusUserCard';
 import UserCard from './UserCard';
 import NewGroup from './NewGroup';
 import { useDispatch, useSelector } from 'react-redux';
 import { searchUser } from '../redux/user/action';
 
-export default function CreateGroup({handleNavigate}) {
+export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) {
   const[newGroup, setNewGroup] = useState(false);
   const [groupMember, setGroupMember] = useState(new Map());
   const[search, setSearch] = useState("");
@@ -79,8 +77,12 @@ export default function CreateGroup({handleNavigate}) {
               {
                 if(item?.id == user?.id) return;
                 return (
-                  <div key={index} onClick={() => handleAddMember(item)}><hr className={index !== 0 ?`mt-2`:''}/><UserCard user={item}/></div>)}
-                )
+                  <div key={index} onClick={() => handleAddMember(item)}>
+                    <hr className={index !== 0 ?`mt-2`:''}/>
+                    <UserCard user={item} isOnline={onlineUsers.includes(item.id)}/>
+                  </div>
+                  )
+                })
               }
           </div>
           {groupMember.size > 1 && search === '' && 
@@ -95,7 +97,7 @@ export default function CreateGroup({handleNavigate}) {
           
         </>
       )}
-      {newGroup && <NewGroup handleSetNewGroup = {handleSetNewGroup} members = {groupMember} handleNavigate = {handleNavigate}/>}
+      {newGroup && <NewGroup handleSetNewGroup = {handleSetNewGroup} members = {groupMember} handleNavigate = {handleNavigate} stompClient = {stompClient}/>}
   </>
   );
 }

@@ -14,14 +14,14 @@ export const messageReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        response: action.payload, // Thêm cuộc trò chuyện mới vào danh sách
+        response: action.payload,
       };
 
     case "SEND_MESSAGE_GROUP_SUCCESS":
       return {
         ...state,
         loading: false,
-        response: action.payload, // Thêm cuộc trò chuyện mới vào danh sách
+        response: action.payload,
       };
 
     case "SEND_MESSAGE_FAILURE":
