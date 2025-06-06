@@ -1,25 +1,56 @@
-import { Alert, Button, Snackbar } from '@mui/material'
+import { Alert, Button, CircularProgress, Snackbar } from '@mui/material'
 import { green } from '@mui/material/colors';
-import{ useRef, useState } from 'react'
+import{ useEffect, useRef, useState } from 'react'
 import { IoMdArrowBack } from "react-icons/io";
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { forgetPassword } from '../redux/user/action';
+import { MyButton } from '../components/Button';
 
 export const ForgetPassword = () => {
     const[openSnackBar, setOpenSnackBar] = useState();
-    const[inputEmail, setInputEmail] = useState();
+    const[inputEmail, setInputEmail] = useState("");
     const status = useRef();
     const navigate = useNavigate();
+    const{message, error, loading} = useSelector(state => state.user);
+    const[messageAlert, setMessageAlert] = useState();
+    const[click, setClick] = useState(false);
+    const dispatch = useDispatch();
     const handleSnackBarClose = () => {
         setOpenSnackBar(false)
     }
     const handleSubmit = (e) => {
         e.preventDefault();
+        const token = localStorage.getItem("token");
+        if(inputEmail === "") {
+            setMessageAlert("Vui lòng nhập email")
+            status.current = false;
+            setOpenSnackBar(true);
+        }
+        dispatch(forgetPassword({request:{email: inputEmail}}));
         setClick(true)
       }
-    const handleOnChangeEmail = () => {
-        
+    const handleOnChangeEmail = (e) => {
+        setInputEmail(e.target.value);
     }
- 
+    useEffect(() => {
+        if(error ==="invalid email" && click) {
+            setMessageAlert("Email không hợp lệ")
+            status.current = false;
+            setOpenSnackBar(true);
+            setClick(false);
+        }else if(error === "Email not existed" && click) {
+            setMessageAlert("Email không tồn tại trong hệ thống")
+            status.current = false;
+            setOpenSnackBar(true);
+            setClick(false);
+        }else if(message === "Send new password to your email successfully" && click) {
+            setMessageAlert("Mật khẩu mới đã được tới email của bạn");
+            status.current = true;
+            setOpenSnackBar(true);
+            setClick(false);
+        }
+    }, [message,error, click])
   return (
     <div className='bg-[#e8e9ec]'>
         <div className='flex justify-center h-screen items-center relative'>
@@ -39,7 +70,7 @@ export const ForgetPassword = () => {
                     <div className='my-5 text-end'>
                     </div>
                     <div >
-                        <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Xác nhận</Button>
+                     <MyButton  text = {"Xác nhận"} loading = {loading} input={inputEmail}/>
                     </div>
                 </form>
             </div>
@@ -49,7 +80,7 @@ export const ForgetPassword = () => {
             autoHideDuration={6000}
             onClose={handleSnackBarClose }
         >
-            <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Đổi mật khẩu thành công!':'Đổi mật khẩu thất bại!'}</Alert>
+            <Alert onClose={handleSnackBarClose } severity={status.current?'success':'error'} sx={{width:'100%'}}>{messageAlert}</Alert>
         </Snackbar>
     </div>
   )

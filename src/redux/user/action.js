@@ -51,3 +51,53 @@ export const getAllUser = (token) => async (dispatch) => {
     });
   }
 };
+export const changePassword = (data) => async (dispatch) => {
+  dispatch({ type: "CHANGE_PASSWORD_REQUEST" });
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/users/change-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${data.token}`,
+      },
+      body: JSON.stringify(data.request),
+    });
+    const resData = await res.json();
+    if (res.ok) {
+      dispatch({ type: "CHANGE_PASSWORD_SUCCESS", payload: resData.message });
+    } else {
+      dispatch({ type: "CHANGE_PASSWORD_FAILURE", payload: resData.message });
+    }
+  } catch (error) {
+    // Dispatch lỗi nếu có
+    dispatch({
+      type: "CHANGE_PASSWORD_FAILURE",
+      payload: error.message,
+    });
+  }
+};
+
+export const forgetPassword = (data) => async (dispatch) => {
+  dispatch({ type: "FORGET_PASSWORD_REQUEST" });
+  try {
+    const res = await fetch(`${BASE_API_URL}/auth/forget-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data.request),
+    });
+    const resData = await res.json();
+    if (res.ok) {
+      dispatch({ type: "FORGET_PASSWORD_SUCCESS", payload: resData.message });
+    } else {
+      dispatch({ type: "FORGET_PASSWORD_FAILURE", payload: resData.message });
+    }
+  } catch (error) {
+    // Dispatch lỗi nếu có
+    dispatch({
+      type: "FORGET_PASSWORD_FAILURE",
+      payload: error.message,
+    });
+  }
+};
