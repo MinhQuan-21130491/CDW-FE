@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux'
 import { register } from '../redux/auth/Action';
+import { MyButton } from '../components/Button';
 
 const SignUp = () => {
     const[name, setName] = useState('');
@@ -16,11 +17,13 @@ const SignUp = () => {
     const[click, setClick] = useState(false);
     const[status, setStatus] = useState();
     const {signup} = useSelector(state => state.auth);
+    const[loading, setLoading] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         dispatch(register({full_name: name, email: inputEmail, password: inputPassword}))
-        setClick(true)
+        setClick(true);
+        setLoading(true);
     }
     const handleOnchangeName =(e) => {
         setName(e.target.value)
@@ -41,6 +44,7 @@ const SignUp = () => {
     useEffect(() => {
         if(signup && click){ 
             if(signup?.status == 200) {
+                setLoading(false);
                 setStatus(true)
                 setOpenSnackBar(true)
                 const timeout = setTimeout(() => {
@@ -95,7 +99,7 @@ const SignUp = () => {
                     <p className='text-sm '>Bạn đã có tài khoản?<Link to="/signup" className='text-sm text-green-600'>Đăng nhập</Link></p>
                 </div>
                 <div >
-                    <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng ký</Button>
+                    <MyButton text={"Đăng ký"} loading = {loading}/>
                 </div>
                 </form>
               

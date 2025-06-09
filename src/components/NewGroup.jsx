@@ -3,7 +3,7 @@ import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { createaGroupChat } from '../redux/chat/action';
-import { Alert, Snackbar } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
 
 function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const usersId = Array.from(members.values()).map(user => user.id);
@@ -12,7 +12,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const [picture, setPicture] = useState('');
   const[openSnackBar, setOpenSnackBar] = useState(false);
   const[status, setStatus] = useState(false );
-  const {status: statusCreateGroup} = useSelector(state => state.chat)
+  const {status: statusCreateGroup, loading} = useSelector(state => state.chat)
   const dispatch = useDispatch();
   const token = localStorage.getItem("token");
   const handleCreateGroup = () => {
@@ -108,7 +108,16 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
         <div className='fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 bg-slate-200 items-center justify-center flex text-5xl cursor-pointer'>
                 <div onClick={() => {
                 }}>
-                <BsArrowRight className='text-white font-bold  bg-[#008069] rounded-full p-1' onClick={handleCreateGroup}/>
+                  {loading ? (
+                    <div className="bg-[#008069] rounded-full p-3">
+                      <CircularProgress size={24} sx={{ color: 'white' }} />
+                    </div>
+                  ) : (
+                    <BsArrowRight
+                      className="text-white font-bold bg-[#008069] rounded-full p-1"
+                      onClick={handleCreateGroup}
+                    />
+                  )}
             </div>
         </div>
         )}

@@ -11,7 +11,7 @@ import { IoIosClose } from "react-icons/io";
 import { FaCircle, FaImage } from "react-icons/fa";
 import Profile from '../components/Profile'
 import { useNavigate } from 'react-router-dom'
-import { Alert, Menu, MenuItem, Snackbar } from '@mui/material'
+import { Alert, CircularProgress, Menu, MenuItem, Snackbar, styled } from '@mui/material'
 import CreateGroup from '../components/CreateGroup'
 import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
@@ -27,6 +27,14 @@ import GroupManagementModal from '../components/ManageChatGroup'
 import { BASE_API_URL } from '../config/api'
 import { ViewMember } from '../components/ViewMember'
 import AlertDialog from '../components/AlertDialog'
+
+const LoadingOverlay = styled('div')({
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+});
 
 export default function HomePage() {
     const[search, setSearch] = useState('');
@@ -622,7 +630,9 @@ export default function HomePage() {
                         {/* Scrollable Chat List */}
                         <div className="flex-1 overflow-y-auto overflow-x-hidden">
                         {loading && !isOpenManageChat ? (
-                            <p>Loading...</p>
+                            <LoadingOverlay>
+                                <CircularProgress color="black" />
+                            </LoadingOverlay>
                             ) : search !== '' ? (
                             users?.length > 0 ? (
                                 <div className="flex-1 overflow-y-auto overflow-x-hidden">

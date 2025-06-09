@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { FaCircle } from "react-icons/fa";
+import { BsThreeDotsVertical } from 'react-icons/bs'
+import { Menu, MenuItem } from '@mui/material';
 
-export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast}) {
-  const [content, setContent] = useState();;
+export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast, handleRemoveChat}) {
+  const [content, setContent] = useState();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+  const [anchorElChat, setAnchorElChat] = useState(null);
+  const openChat = Boolean(anchorElChat);
+  const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+      setAnchorEl(null);
+  };
   useEffect(() => {
       if(typeMessageLast) {
         console.log(typeMessageLast)
@@ -25,7 +37,7 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
     <div className='px-3 pb-2 cursor-pointerw-full cursor-pointer'>
         {/* Line separator */}
         <div className='border-t border-gray-300 mb-2 w-full'></div>
-        <div className='flex justify-between items-center w-full'>
+        <div className='flex justify-between items-center w-full relative'>
             <div  className='flex space-x-3 items-center w-[100%]'>
                   <div className="relative w-16 h-12">
                     <img
@@ -49,6 +61,27 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
                      )}
                 </div>  
             </div>
+             {!isHide && (
+            <div className="absolute top-0 right-3">
+              <BsThreeDotsVertical 
+                id="basic-button"
+                aria-controls={open ? 'basic-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={handleClick}
+                className='cursor-pointer'
+              />  
+              <Menu
+                id="basic-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                MenuListProps={{'aria-labelledby': 'basic-button',}}
+              >
+                <MenuItem onClick={handleRemoveChat}>Xóa đoạn chat</MenuItem>
+              </Menu>
+            </div>
+             )}
             <div>
             </div>
         </div>

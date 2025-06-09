@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { currentUser, login } from '../redux/auth/Action';
+import { MyButton } from '../components/Button';
 
 const SignIn = () => {
     const[inputEmail, setInputEmail] = useState('');
@@ -12,13 +13,15 @@ const SignIn = () => {
     const[status, setStatus] = useState();
     const {signin} = useSelector(state => state.auth);
     const[click, setClick] = useState(false);
+    const[loading, setLoading] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const handleSubmit = (e) => {
         e.preventDefault();
         dispatch(login({email: inputEmail, password: inputPassword}))
-        setClick(true)
+        setClick(true);
+        setLoading(true);
       }
     const handleOnchangeEmail =(e) => {
         setInputEmail(e.target.value)
@@ -35,8 +38,9 @@ const SignIn = () => {
         const isSuccess = signin.status === 200;
       
         setStatus(isSuccess);
+        setLoading(false);
         setOpenSnackBar(true);
-      
+        
         if (isSuccess) {
           localStorage.setItem("token", signin.token);
           dispatch(currentUser(signin.token));
@@ -75,7 +79,8 @@ const SignIn = () => {
                         <p className='text-sm pt-1'>Bạn chưa có tài khoản? <Link to="/signup" className='text-sm text-green-600'>Đăng ký</Link></p>
                     </div>
                     <div >
-                        <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng nhập</Button>
+                        {/* <Button type='submit' sx={{bgcolor:green[500]}} className='w-full bg-green-600' variant='contained'>Đăng nhập</Button> */}
+                        <MyButton text={"Đăng nhập"}loading = {loading} />
                     </div>
                 </form>
             </div>
