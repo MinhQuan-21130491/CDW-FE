@@ -18,7 +18,7 @@ import { currentUser } from '../redux/auth/Action'
 import { getAllUser, searchUser } from '../redux/user/action'
 import UserCard from '../components/UserCard'
 import { sendMessage, sendMessageGroup } from '../redux/message/action'
-import { getAllChat, getChatById, getSingleChat, removeUserFromGroup } from '../redux/chat/action'
+import { deleteChat, getAllChat, getChatById, getSingleChat, removeUserFromGroup } from '../redux/chat/action'
 import EmojiPicker from "emoji-picker-react";
 import SockJS from 'sockjs-client/dist/sockjs'
 import { Client } from '@stomp/stompjs';
@@ -71,6 +71,7 @@ export default function HomePage() {
     const [openViewMember, setOpenViewMember] = useState(false);
     const [usersInGroup, setUsersInGroup] = useState();
     const [openAlertDialog, setOpenAlertDialog] = useState(false);
+    const [openAlertDialogRemoveChat, setOpenAlertDialogRemoveChat] = useState(false);
     const status = useRef("");
     const handleSnackBarClose = () => {
         setOpenSnackBar(false);
@@ -95,6 +96,14 @@ export default function HomePage() {
     }
     const handleCloseAlertDialog = () => {
         setOpenAlertDialog(false);
+        setOpenAlertDialogRemoveChat(false);
+    } 
+    const handleOpenAlertDialogRemoveChat = () => {
+        handleCloseAlertDialogRemoveChat();
+        setOpenAlertDialogRemoveChat(true);
+    }
+    const handleCloseAlertDialogRemoveChat = () => {
+        setOpenAlertDialogRemoveChat(false);
     }
     const handleNavigateChangePassword = () => { 
         navigate('/change-password');
@@ -556,11 +565,24 @@ export default function HomePage() {
             setCurrentChat({show:false});
             status.current = "Rời nhóm thành công"
         }
+        if(msg === "Remove chat successfully") {
+            dispatch(getAllChat({token: token, userId: user?.id}));
+            setOpenSnackBar(true);
+            setCurrentChat({show:false});
+            status.current = "Xóa chat thành công"
+        }
     }, [msg])
       useEffect(() => {
         const usersInGroup = chat?.userChat?.map((u) => {return u?.user});
         setUsersInGroup(usersInGroup);
       }, [chat, users])
+    const handleRemoveChat = (chatId) => {
+        const data = {
+            token: token,
+            chatId: chatId,
+        }
+        dispatch(deleteChat(data));
+    }
   return (
     <div className='relative h-screen bg-slate-300 '>
         <div className='w-full py-14 bg-primeColor '></div>
@@ -631,7 +653,7 @@ export default function HomePage() {
                         <div className="flex-1 overflow-y-auto overflow-x-hidden">
                         {loading && !isOpenManageChat ? (
                             <LoadingOverlay>
-                                <CircularProgress color="black" />
+                                <CircularProgress color="gray" />
                             </LoadingOverlay>
                             ) : search !== '' ? (
                             users?.length > 0 ? (
@@ -665,6 +687,7 @@ export default function HomePage() {
                                             isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
                                             isOnline={chat?.online}
                                             typeMessageLast = {chat?.userMessages?.at(-1)?.message?.type}
+                                            handleRemoveChat={handleOpenAlertDialogRemoveChat}
                                         />
                                     </div>
                                     );
@@ -761,18 +784,20 @@ export default function HomePage() {
                         <div className='bg-blue-200 h-full w-full overflow-y-scroll'>
                             <div className='py-20 pl-10 pr-4 space-y-2 flex flex-col justify-center '>
                                 {messageData && messageData?.userMessages && messageData.userMessages.map((item, index) => {
-                                return (
-                                    <MessageCard
-                                        key={index}
-                                        showAvatar={item.showAvatar}
-                                        isReceiUserMessage={item?.senderUser?.id !== user.id}
-                                        content={item?.message?.content}
-                                        time={item?.message?.timestamp}
-                                        avatar={item?.senderUser?.profile_picture}
-                                        type = {item?.message?.type}
-                                        images = {item?.message?.medias}
-                                    />
-                                )})}
+                                    
+                                        return (
+                                            <MessageCard
+                                                key={index}
+                                                showAvatar={item.showAvatar}
+                                                isReceiUserMessage={item?.senderUser?.id !== user.id}
+                                                content={item?.message?.content}
+                                                time={item?.message?.timestamp}
+                                                avatar={item?.senderUser?.profile_picture}
+                                                type = {item?.message?.type}
+                                                images = {item?.message?.medias}
+                                            />
+                                        )
+                                    })}
                                 {/* Phần tử đánh dấu cuối danh sách */}
                                 <div ref={bottomRef}></div>
                             </div>
@@ -863,6 +888,13 @@ export default function HomePage() {
                      handleConfirm = {handleOutChat} 
                      handleCancel = {handleCloseAlertDialog}/>
         <ViewMember openViewMember={openViewMember} handleCloseViewMember={handCloseViewMember} usersInGroup = {usersInGroup} />
+        <AlertDialog openAlertDialog ={openAlertDialogRemoveChat} 
+                     handleCloseAlertDialog = {handleCloseAlertDialogRemoveChat} 
+                     title = "Xác nhận xóa đoạn chat" 
+                     content = "Bạn có chắc chắn muốn xóa đoạn chat này không?"  
+                     handleConfirm = {() => { handleRemoveChat(currentChat?.chatId);
+                                             handleCloseAlertDialog()}} 
+                     handleCancel = {handleCloseAlertDialog}/>
     </div>
   )
 }

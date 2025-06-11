@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { FaCircle } from "react-icons/fa";
 import { BsThreeDotsVertical } from 'react-icons/bs'
 import { Menu, MenuItem } from '@mui/material';
+import { MdDelete } from "react-icons/md";
 
 export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast, handleRemoveChat}) {
   const [content, setContent] = useState();
@@ -63,23 +64,8 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
             </div>
              {!isHide && (
             <div className="absolute top-0 right-3">
-              <BsThreeDotsVertical 
-                id="basic-button"
-                aria-controls={open ? 'basic-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                onClick={handleClick}
-                className='cursor-pointer'
-              />  
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{'aria-labelledby': 'basic-button',}}
-              >
-                <MenuItem onClick={handleRemoveChat}>Xóa đoạn chat</MenuItem>
-              </Menu>
+             <MdDelete onClick={handleRemoveChat}/>
+
             </div>
              )}
             <div>

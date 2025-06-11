@@ -16,6 +16,7 @@ export const chatReducer = (state = initialState, action) => {
     case "RENAME_GROUP_REQUEST":
     case "ADD_USER_GROUP_REQUEST":
     case "REMOVE_USER_GROUP_REQUEST":
+    case "REMOVE_CHAT_REQUEST":
       return { ...state, loading: true, message: "" };
 
     case "CREATE_CHAT_GROUP_SUCCESS":
@@ -67,6 +68,13 @@ export const chatReducer = (state = initialState, action) => {
         loading: false,
         message: action.payload,
       };
+    case "REMOVE_CHAT_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        message: action.payload,
+      };
+
     case "CREATE_CHAT_GROUP_FAILURE":
     case "GET_CHAT_ALL_FAILURE":
     case "GET_CHAT_BY_ID_FAILURE":
@@ -74,6 +82,7 @@ export const chatReducer = (state = initialState, action) => {
     case "RENAME_GROUP_FAILURE":
     case "ADD_USER_GROUP_FAILURE":
     case "REMOVE_USER_GROUP_FAILURE":
+    case "REMOVE_CHAT_FAILURE":
       return {
         ...state,
         loading: false,

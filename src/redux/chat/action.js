@@ -85,6 +85,7 @@ export const getSingleChat = (chatData) => async (dispatch) => {
       }
     );
     const resData = await res.json();
+    console.log(resData);
     if (res.ok) {
       dispatch({ type: "GET_CHAT_SINGLE_SUCCESS", payload: resData.chat });
     } else {
@@ -166,5 +167,29 @@ export const removeUserFromGroup = (data) => async (dispatch) => {
     }
   } catch (err) {
     dispatch({ type: "REMOVE_USER_GROUP_FAILURE", payload: err.message });
+  }
+};
+export const deleteChat = (data) => async (dispatch) => {
+  dispatch({ type: "REMOVE_CHAT_REQUEST" });
+  try {
+    const res = await fetch(
+      `${BASE_API_URL}/api/chats/delete/${data?.chatId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data?.token}`,
+        },
+      }
+    );
+    const resData = await res.json();
+    console.log(resData);
+    if (res.ok) {
+      dispatch({ type: "REMOVE_CHAT_SUCCESS", payload: resData.message });
+    } else {
+      dispatch({ type: "REMOVE_CHAT_FAILURE", payload: resData.message });
+    }
+  } catch (err) {
+    dispatch({ type: "REMOVE_CHAT_FAILURE", payload: err.message });
   }
 };
