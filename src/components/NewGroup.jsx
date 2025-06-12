@@ -108,16 +108,18 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
         <div className='fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 bg-slate-200 items-center justify-center flex text-5xl cursor-pointer'>
                 <div onClick={() => {
                 }}>
-                  {loading ? (
-                    <div className="bg-[#008069] rounded-full p-3">
-                      <CircularProgress size={24} sx={{ color: 'white' }} />
-                    </div>
-                  ) : (
-                    <BsArrowRight
-                      className="text-white font-bold bg-[#008069] rounded-full p-1"
-                      onClick={handleCreateGroup}
-                    />
-                  )}
+                  <div className={`${!loading ? 'bg-[#008069]' : 'bg-gray-400'} rounded-full p-2 w-12 h-12 flex items-center justify-center`}>
+                    {loading ? (
+                        <CircularProgress size={20} sx={{ color: 'white' }} />
+                    ) : (
+                      <BsArrowRight
+                        onClick={handleCreateGroup}
+                        color='white'
+                        
+                      />
+                    )}
+                  </div>
+
             </div>
         </div>
         )}

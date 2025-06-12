@@ -707,7 +707,8 @@ export default function HomePage() {
                                                  isMe = {chat?.userMessages?.at(-1)?.senderUser.id == user?.id}
                                                  isOnline={chat?.online}
                                                  typeMessageLast = {chat?.userMessages?.at(-1)?.message?.type}
-                                                 />
+                                                 handleRemoveChat={handleOpenAlertDialogRemoveChat}
+                                        />
                                     </div>
                                     );
                                 }
