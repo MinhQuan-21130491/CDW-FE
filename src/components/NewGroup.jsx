@@ -12,7 +12,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const [picture, setPicture] = useState('');
   const[openSnackBar, setOpenSnackBar] = useState(false);
   const[status, setStatus] = useState(false );
-  const {status: statusCreateGroup} = useSelector(state => state.chat)
+  const {status: statusCreateGroup, loading} = useSelector(state => state.chat)
   const dispatch = useDispatch();
   const token = localStorage.getItem("token");
   const handleCreateGroup = () => {
