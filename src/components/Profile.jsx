@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { BsArrowLeft, BsCheck2, BsPencil } from 'react-icons/bs';
-import { FaCheck } from 'react-icons/fa6';
+import { useEffect, useState } from 'react';
+import { BsArrowLeft, BsArrowRight, BsPencil } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../redux/auth/Action';
-import { Alert, Button, Snackbar } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
+import { avatar_default } from '../assets'
 
   export default function Profile({ handleNavigate, user, onUpdateUser}) {
     const [flag, setFlag] = useState(false);
@@ -12,8 +12,9 @@ import { Alert, Button, Snackbar } from '@mui/material';
     const[openSnackBar, setOpenSnackBar] = useState(false);
     const[status, setStatus] = useState(false );
     const{update} = useSelector(state => state.auth);
-    const[click, setClick] = useState(false)
+    const[click, setClick] = useState(false);
     const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
 
     const handleSelectPicture = (event) => {
       const file = event.target.files[0];
@@ -37,8 +38,10 @@ import { Alert, Button, Snackbar } from '@mui/material';
         profile_picture: picture,
       }
       dispatch(updateUser(updateRequest));
-      setClick(true)
-      setFlag(false)
+      setClick(true);
+      setFlag(false);
+      setLoading(true);
+
     }
     const handleSnackBarClose = () => {
       setOpenSnackBar(false)
@@ -47,8 +50,9 @@ import { Alert, Button, Snackbar } from '@mui/material';
         if(click && update){
             if(update?.status == 200) {
                 onUpdateUser();
-                setStatus(true)
+                setStatus(true);
                 setOpenSnackBar(true)
+                setLoading(false);
             }else{
                 setStatus(false)
                 setOpenSnackBar(true)
@@ -68,8 +72,7 @@ import { Alert, Button, Snackbar } from '@mui/material';
         <label htmlFor="imgInput">
           <img
             src={
-              picture ||
-              'https://s3v2.interdata.vn:9000/s3-586-15343-storage/dienthoaigiakho/wp-content/uploads/2024/01/16101418/trend-avatar-vo-danh-14.jpg'
+              picture || avatar_default
             }
             className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer"
           />
@@ -101,8 +104,15 @@ import { Alert, Button, Snackbar } from '@mui/material';
       {/* Hiển thị nút lưu nếu có thay đổi */}
       {(picture !== user?.profile_picture || username !== user?.full_name) && !click && (
         <div className="fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 flex items-center justify-center text-5xl cursor-pointer">
-          <div onClick={handleUpdateUser}>
-            <FaCheck className="text-white font-bold bg-[#008069] rounded-full p-1" />
+            <div className={`${!loading ? 'bg-[#008069]' : 'bg-gray-400'} rounded-full p-2 w-12 h-12 flex items-center justify-center`}>
+              {loading ? (
+                <CircularProgress size={20} sx={{ color: 'white' }} />
+                ) : (
+                <BsArrowRight
+                  onClick={handleUpdateUser}
+                  color='white'    
+                />
+              )}
           </div>
         </div>
       )}

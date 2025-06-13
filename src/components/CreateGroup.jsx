@@ -87,10 +87,11 @@ export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) 
           </div>
           {groupMember.size > 1 && search === '' && 
             <div className='fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 bg-slate-200 items-center justify-center flex text-5xl cursor-pointer'>
-                <div onClick={() => {
-                 handleSetNewGroup(true);
-                }}>
-                    <BsArrowRight className='text-white font-bold  bg-[#008069] rounded-full p-1'/>
+                <div className={`bg-[#008069] rounded-full p-2 w-12 h-12 flex items-center justify-center`}>                
+                      <BsArrowRight
+                        onClick={ () => handleSetNewGroup(true)}
+                        color='white'       
+                      />                      
                 </div>
           </div>
           }
