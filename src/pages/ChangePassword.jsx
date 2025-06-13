@@ -27,9 +27,10 @@ export const ChangePassword = () => {
             setMessageAlert("Mật khẩu nhập lại không khớp")
             status.current = false;
             setOpenSnackBar(true);
-        }
+        }else {
         dispatch(changePassword({token: token, request: {oldPassword: inputCurrentPw, newPassword: inputPw}}))
         setClick(true)
+        }
       }
     const handleOnchangeCurrentPw = (e) => {
         setInputCurrentPw(e.target.value)
@@ -48,7 +49,7 @@ export const ChangePassword = () => {
             status.current = false;
             setOpenSnackBar(true);
             setClick(false);
-        }else if(error === "Mật khẩu phải có ít nhất 6 ký tự, chứa chữ hoa, chữ thường, số và ký tự đặc biệt") {
+        }else if(error === "Password must be at least 6 characters, contain uppercase, lowercase, numbers and special characters") {
             setMessageAlert("Mật khẩu phải có ít nhất 6 ký tự, chứa chữ hoa, chữ thường, số và ký tự đặc biệt")
             status.current = false;
             setOpenSnackBar(true);

@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs';
-import { FaCheck } from 'react-icons/fa6';
+import { useEffect, useState } from 'react';
+import { BsArrowLeft, BsArrowRight, BsPencil } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../redux/auth/Action';
-import { Alert, Button, CircularProgress, Snackbar } from '@mui/material';
+import { Alert, CircularProgress, Snackbar } from '@mui/material';
+import { avatar_default } from '../assets'
 
   export default function Profile({ handleNavigate, user, onUpdateUser}) {
     const [flag, setFlag] = useState(false);
@@ -72,8 +72,7 @@ import { Alert, Button, CircularProgress, Snackbar } from '@mui/material';
         <label htmlFor="imgInput">
           <img
             src={
-              picture ||
-              'https://s3v2.interdata.vn:9000/s3-586-15343-storage/dienthoaigiakho/wp-content/uploads/2024/01/16101418/trend-avatar-vo-danh-14.jpg'
+              picture || avatar_default
             }
             className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer"
           />

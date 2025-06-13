@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import ImageDialog from './DialogImage';
+import { avatar_default } from '../assets'
 
 export default function MessageCard({ isReceiUserMessage, content, avatar, showAvatar, time, type, images }) {
   const [openDialog, setOpenDialog] = useState(false);
@@ -17,7 +18,7 @@ export default function MessageCard({ isReceiUserMessage, content, avatar, showA
         {isReceiUserMessage && showAvatar && (
           <div className="absolute -bottom-0 -left-6">
             <img
-              src={avatar || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWestySFdjEYa_HB1RMZVgx07ds7WXNUpLaQ&s"}
+              src={avatar || avatar_default}
               className="w-[18px] h-[18px] rounded-full object-cover" 
             />
           </div>

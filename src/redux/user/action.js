@@ -66,7 +66,10 @@ export const changePassword = (data) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: "CHANGE_PASSWORD_SUCCESS", payload: resData.message });
     } else {
-      dispatch({ type: "CHANGE_PASSWORD_FAILURE", payload: resData.message });
+      dispatch({
+        type: "CHANGE_PASSWORD_FAILURE",
+        payload: resData.errors.password,
+      });
     }
   } catch (error) {
     // Dispatch lỗi nếu có
