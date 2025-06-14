@@ -3,7 +3,7 @@ import { FaCircle } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { avatar_default } from '../assets'
 
-export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast, handleRemoveChat}) {
+export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast}) {
   const [content, setContent] = useState();
 
   useEffect(() => {
@@ -35,8 +35,9 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
                       src={user?.profile_picture || group?.chat_image || avatar_default}
                       className="w-12 h-12 rounded-full object-cover"
                     />
-                    <FaCircle className={`absolute bottom-0 right-0 ${isOnline ? 'text-green-400' :'text-gray-300'} text-xs bg-white rounded-full`} />
-                  </div>
+              {isOnline && (
+                <FaCircle className={`absolute bottom-0 left-9 text-green-400 text-xs bg-white rounded-full`} />
+              )}                  </div>
                 <div className='w-full hidden md:block'>
                      <p className='text-md'>{user?.full_name || group?.chat_name || 'chip'}</p>
                      {!isHide && (
@@ -52,12 +53,7 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
                      )}
                 </div>  
             </div>
-             {!isHide && (
-            <div className="absolute top-0 right-3">
-             <MdDelete onClick={handleRemoveChat}/>
-
-            </div>
-             )}
+          
             <div>
             </div>
         </div>

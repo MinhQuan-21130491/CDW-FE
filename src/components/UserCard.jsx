@@ -13,7 +13,9 @@ export default function UserCard({user, isOnline}) {
                   src = {user?.profile_picture || avatar_default}
                   className='w-12 h-12 rounded-full object-cover'
               />
-              <FaCircle className={`absolute bottom-0 left-9 ${isOnline ? 'text-green-400' :'text-gray-300'} text-xs bg-white rounded-full`} />
+              {isOnline && (
+                <FaCircle className={`absolute bottom-0 left-9 text-green-400 text-xs bg-white rounded-full`} />
+              )}
             </div>
         </div>
         <div className=' w-[80%] hidden md:block text-ellipsis overflow-hidden whitespace-nowrap'>

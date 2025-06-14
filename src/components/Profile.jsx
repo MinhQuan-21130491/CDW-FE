@@ -70,12 +70,26 @@ import { avatar_default } from '../assets'
       {/* Cập nhật ảnh đại diện */}
       <div className="flex flex-col justify-center items-center my-8">
         <label htmlFor="imgInput">
-          <img
-            src={
-              picture || avatar_default
-            }
-            className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer"
-          />
+          {picture ==="" ? (
+                      <div className='text-center cursor-pointer'>
+                        <div className=" w-[12vw] h-[12vw] rounded-full bg-white flex items-center justify-center mb-5">
+                            <BiSolidImageAdd className="text-[#008069]" size={40} />
+                        </div>
+                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+                      </div>
+                      
+                    ): (
+                      <div className='text-center cursor-pointer'>
+                        <img
+                          src={
+                            picture ||
+                            avatar_default
+                          }
+                          className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer mb-5"
+                        />
+                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+                      </div>
+                    )}
         </label>
         <input type="file" id="imgInput" className="hidden" accept="image/*" onChange={handleSelectPicture} />
       </div>

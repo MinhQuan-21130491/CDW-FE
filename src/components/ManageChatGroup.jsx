@@ -22,7 +22,7 @@ import {
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
-import { addUserToGroup, removeUserFromGroup, renameGroup } from '../redux/chat/action';
+import { addUserToGroup, editGroup, removeUserFromGroup } from '../redux/chat/action';
 import { searchUser } from '../redux/user/action';
 import AlertDialog from './AlertDialog';
 
@@ -41,7 +41,7 @@ const LoadingOverlay = styled('div')({
   borderRadius: '2px',
 });
 
-export default function GroupManagementModal({ open, handleClose, chat, token, chat_image, stompClient, reloadUserInChat }) {
+export default function GroupManagementModal({ open, handleClose, chat, token, stompClient, reloadUserInChat, userCurrent }) {
   const [tabIndex, setTabIndex] = useState(0);
   const [groupName, setGroupName] = useState("");
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +55,8 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
   const [usersInGroup, setUsersInGroup] = useState();
   const [openAlertDialog, setOpenAlertDialog] = useState(false);  
   const [userId, setUserId] = useState();
+  const [groupAvatar, setGroupAvatar] = useState(null);
+  const [groupAvatarPreview, setGroupAvatarPreview] = useState('');
   const handleOpenAlertDialog = (userId) => {
         setUserId(userId);
         setOpenAlertDialog(true);
@@ -70,13 +72,17 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
     setOpenSnackBar(false);
   };
 
-  const handleRename = () => {
+  const handleEditGroup = () => {
+    console.log( chat?.chat_name)
     const data = {
         token: token,
-        chatId: chat?.id,
-        newName: groupName,
+        chatReq: {
+          chatId: chat?.id,
+          newName: groupName || chat?.chat_name,
+          groupAvatar: groupAvatar
+        }
     }
-    dispatch(renameGroup(data));
+    dispatch(editGroup(data));
     setClick(true);
   };
 
@@ -112,13 +118,14 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
   useEffect(() => {
         if(message === "Rename group successfully" && click) {
         setGroupName("");
+        setIsDisable(true);
         stompClient.publish({
             destination: '/app/notification',
             body: JSON.stringify({
                 name_request: "change group name",
                 chatId: chat?.id,
-                chat_name: groupName,
-                chat_image: chat_image
+                chat_name: groupName || chat?.chat_name,
+                chat_image: chat?.chat_image
             }),
             headers: { 
                 'content-type': 'application/json'
@@ -149,7 +156,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
               destination: '/app/broadcast-notification',
               body: JSON.stringify({
                   receiverIds: [id],
-                  message: "Remove user in group successfully"
+                  message: "Remove user in group successfully",
                 }),
               headers: { 
                   'content-type': 'application/json'
@@ -200,17 +207,49 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
         {/* Tab 1: Rename group */}
         {tabIndex === 0 && (
           <Box>
+            {/* Chọn ảnh đại diện */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Avatar
+                src={groupAvatarPreview || chat?.chat_image}
+                sx={{ width: 56, height: 56, mr: 2 }}
+              />
+              <Button variant="outlined" component="label">
+                Chọn ảnh
+                <input
+                  hidden
+                  accept="image/*"
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setGroupAvatar(file); // Lưu file ảnh
+                      setGroupAvatarPreview(URL.createObjectURL(file)); // Hiển thị preview
+                      setIsDisable(false); // Cho phép nút lưu
+                    }
+                  }}
+                />
+              </Button>
+            </Box>
+
+            {/* Nhập tên nhóm */}
             <TextField
-              label= "Tên nhóm mới"
+              label="Tên nhóm mới"
               fullWidth
               value={groupName}
-              onChange={(e) => {setGroupName(e.target.value) 
-                               setIsDisable(false)}}
+              onChange={(e) => {
+                setGroupName(e.target.value);
+                setIsDisable(false);
+              }}
               sx={{ mb: 2 }}
             />
-            <Button disabled = {isDisable} variant="contained" onClick={handleRename}>Lưu</Button>
+
+            {/* Nút lưu */}
+            <Button disabled={isDisable} variant="contained" onClick={handleEditGroup}>
+              Lưu
+            </Button>
           </Box>
         )}
+
 
         {/* Tab 2: Add member */}
         {tabIndex === 1 && (
@@ -253,9 +292,11 @@ export default function GroupManagementModal({ open, handleClose, chat, token, c
                 <ListItem
                   key={index}
                   secondaryAction={
-                    <IconButton onClick={() => handleOpenAlertDialog(user.id)}>
-                      <DeleteIcon />
-                    </IconButton>
+                      user.id !== userCurrent.id && (
+                        <IconButton onClick={() => handleOpenAlertDialog(user.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      )
                   }
                 >
                   <ListItemAvatar>

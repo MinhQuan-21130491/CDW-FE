@@ -95,30 +95,29 @@ export const getSingleChat = (chatData) => async (dispatch) => {
     dispatch({ type: "GET_CHAT_SINGLE_FAILURE", payload: err.message });
   }
 };
-export const renameGroup = (chatData) => async (dispatch) => {
-  dispatch({ type: "RENAME_GROUP_REQUEST" });
+export const editGroup = (data) => async (dispatch) => {
+  dispatch({ type: "EDIT_GROUP_REQUEST" });
   try {
-    const res = await fetch(
-      `${BASE_API_URL}/api/chats/${chatData.chatId}/rename/${encodeURIComponent(
-        chatData.newName
-      )}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${chatData.token}`,
-        },
-      }
-    );
+    const formData = new FormData();
+    formData.append("chatId", data.chatReq.chatId);
+    formData.append("newName", data.chatReq.newName);
+    formData.append("groupAvatar", data.chatReq.groupAvatar);
+    const res = await fetch(`${BASE_API_URL}/api/chats/edit-group`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${data.token}`,
+      },
+      body: formData,
+    });
     const resData = await res.json();
     console.log(resData);
     if (res.ok) {
-      dispatch({ type: "RENAME_GROUP_SUCCESS", payload: resData.message });
+      dispatch({ type: "EDIT_GROUP_SUCCESS", payload: resData });
     } else {
-      dispatch({ type: "RENAME_GROUP_FAILURE", payload: resData.message });
+      dispatch({ type: "EDIT_GROUP_FAILURE", payload: resData.message });
     }
   } catch (err) {
-    dispatch({ type: "RENAME_GROUP_FAILURE", payload: err.message });
+    dispatch({ type: "EDIT_GROUP_FAILURE", payload: err.message });
   }
 };
 export const addUserToGroup = (data) => async (dispatch) => {
@@ -138,7 +137,6 @@ export const addUserToGroup = (data) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: "ADD_USER_GROUP_SUCCESS", payload: resData.message });
     } else {
-      console.log(resData.message);
       dispatch({ type: "ADD_USER_GROUP_FAILURE", payload: resData.message });
     }
   } catch (err) {
@@ -159,7 +157,6 @@ export const removeUserFromGroup = (data) => async (dispatch) => {
       }
     );
     const resData = await res.json();
-    console.log(resData);
     if (res.ok) {
       dispatch({ type: "REMOVE_USER_GROUP_SUCCESS", payload: resData.message });
     } else {

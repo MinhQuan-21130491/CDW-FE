@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import StatusUserCard from '../components/StatusUserCard';
 import { AiOutlineClose } from 'react-icons/ai';
 import StatusViewer from './StatusViewer';
-import { 
+import {
   Modal,
   Box,
   IconButton,
@@ -11,21 +11,27 @@ import {
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 
-export default function StatusModal({ open, onClose, onlineUsers}) {
-  const {user} = useSelector((state) => state.auth);
-  const {users} = useSelector((state) => state.user);
+export default function StatusModal({ open, onClose, onlineUsers }) {
+  const { user } = useSelector((state) => state.auth);
+  const { users } = useSelector((state) => state.user);
   const [stories, setStories] = useState([]);
-  const [ownerStory, setOwnerStory] = useState([]);
-  const handleViewStories = (stories, ownerStory) => {
+  const [ownerStory, setOwnerStory] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  const handleViewStories = (stories, ownerId) => {
     setStories(stories);
-    setOwnerStory(ownerStory)
-  }
+    setOwnerStory(ownerId);
+    setSelectedUserId(ownerId);
+  };
+
   useEffect(() => {
     if (user?.stories) {
       setStories(user.stories);
       setOwnerStory(user?.id);
+      setSelectedUserId(user?.id);
     }
   }, [user?.stories, open]);
+
   return (
     <Modal
       open={open}
@@ -36,8 +42,8 @@ export default function StatusModal({ open, onClose, onlineUsers}) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        '& .MuiBox-root': { // Target Box component inside Modal
-          border: 'none' // Bỏ border
+        '& .MuiBox-root': {
+          border: 'none'
         }
       }}
     >
@@ -60,23 +66,57 @@ export default function StatusModal({ open, onClose, onlineUsers}) {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            px: 1,
             overflow: 'hidden',
           }}
         >
-          <Box pb={2} onClick = {() => handleViewStories(user?.stories, user?.id)}>
-            <StatusUserCard user={user} isCreate={true} isOnline = {true}/>
+          {/* Current user */}
+          <Box
+            pb={0.5}
+            onClick={() => handleViewStories(user?.stories, user?.id)}
+            sx={{
+              border: '2px solid',
+              borderColor: selectedUserId === user?.id ? '#00bfa5' : 'transparent',
+              borderRadius: 2,
+              mb: 1,
+              cursor: 'pointer',
+            
+            }}
+          >
+            <StatusUserCard user={user} isCreate={true} isOnline={true} />
           </Box>
+
           <Divider sx={{ bgcolor: 'rgba(255,255,255)' }} />
+
+          {/* Other users */}
           <Box sx={{ overflowY: 'auto', flex: 1 }}>
-            {users && users?.map((item, index) => {
-              if(item?.id == user?.id) return;
+            {users && users.map((item, index) => {
+              if (item?.id === user?.id) return null;
+
+              const isSelected = selectedUserId === item?.id;
+
               return (
-              <Box key={index} onClick = {() => handleViewStories(item?.stories, item?.id)}>
-                <StatusUserCard key={index} user ={item} isOnline = {onlineUsers.includes(item.id)}/>
-              </Box>
-              )})}
-              <Box sx = {{paddingBottom: 2}}/>
+                <Box
+                  key={index}
+                  onClick={() => handleViewStories(item?.stories, item?.id)}
+                  sx={{
+                    border: '2px solid',
+                    borderColor: isSelected ? 'red' : 'transparent',
+                    borderRadius: 2,
+                    paddingBottom: 1,
+                    transition: 'all 0.3s',
+                    backgroundColor: isSelected ? 'rgba(200, 200, 200, 0.2)' : 'transparent',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: '#00bfa5',
+                      backgroundColor: 'rgba(200, 200, 200, 0.2)',
+                    },
+                  }}
+                >
+                  <StatusUserCard user={item} isOnline={onlineUsers.includes(item.id)} />
+                </Box>
+              );
+            })}
+            <Box sx={{ paddingBottom: 1 }} />
           </Box>
         </Box>
 
@@ -100,7 +140,7 @@ export default function StatusModal({ open, onClose, onlineUsers}) {
           >
             <AiOutlineClose fontSize="large" />
           </IconButton>
-          <StatusViewer stories={stories} ownerStory = {ownerStory} />
+          <StatusViewer stories={stories} ownerStory={ownerStory} />
         </Box>
       </Box>
     </Modal>

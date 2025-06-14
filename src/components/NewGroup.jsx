@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BsArrowLeft, BsArrowRight, BsCheck2, BsPencil } from 'react-icons/bs';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { BiSolidImageAdd } from "react-icons/bi";
 import { createaGroupChat } from '../redux/chat/action';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 
@@ -80,13 +80,28 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
         {/* update profile pic section */}
         <div className="flex flex-col justify-center items-center my-8">
         <label htmlFor="imgInput">
-          <img
-            src={
-              picture ||
-              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtH3-0w5YZo8m01xHjGu3DbqJbLzjKODATcA&s'
-            }
-            className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer"
-          />
+          {picture ==="" ? (
+            <div className='text-center cursor-pointer'>
+              <div className=" w-[12vw] h-[12vw] rounded-full bg-white flex items-center justify-center mb-5">
+                  <BiSolidImageAdd className="text-[#008069]" size={40} />
+              </div>
+              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+            </div>
+            
+          ): (
+            <div className='text-center cursor-pointer'>
+              <img
+                src={
+                  picture ||
+                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtH3-0w5YZo8m01xHjGu3DbqJbLzjKODATcA&s'
+                }
+                className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer mb-5"
+              />
+              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+            </div>
+          )}
+         
+          
         </label>
         <input type="file" id="imgInput" className="hidden" accept="image/*" onChange={handleSelectPicture} />
       </div>
