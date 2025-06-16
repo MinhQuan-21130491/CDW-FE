@@ -73,7 +73,6 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
   };
 
   const handleEditGroup = () => {
-    console.log( chat?.chat_name)
     const data = {
         token: token,
         chatReq: {
@@ -140,7 +139,8 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
             destination: '/app/broadcast-notification',
             body: JSON.stringify({
                  receiverIds: [id],
-                 message: "You have been added to group"
+                 message: "You have been added to group",
+                 chatId: chat?.id
               }),
             headers: { 
                 'content-type': 'application/json'
@@ -157,6 +157,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
               body: JSON.stringify({
                   receiverIds: [id],
                   message: "Remove user in group successfully",
+                  chatId: chat?.id
                 }),
               headers: { 
                   'content-type': 'application/json'
