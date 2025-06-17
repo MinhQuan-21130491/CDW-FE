@@ -29,6 +29,7 @@ const SignUp = () => {
             setMessage("Mật khẩu nhập lại không khớp");
             setFieldErrors({ passwordConfirm: true });
             setOpenSnackBar(true);
+            setStatus(false);
             return;
         }
 
@@ -56,6 +57,7 @@ const SignUp = () => {
             const isSuccess = signup.status === 200;
             const passwordError = signup?.errors?.password;
             const emailError = signup?.errors?.email;
+            const nameError = signup?.errors?.full_name;
             const errors = {};
 
             if (isSuccess) {
@@ -67,6 +69,10 @@ const SignUp = () => {
                 setLoading(false);
                 return () => clearTimeout(timeout);
             } else {
+                if(nameError === "size must be between 4 and 2147483647") {
+                    setMessage("Tên phải hơn 3 kí tự");
+                    errors.name = true;
+                }else
                 if (signup.message === "Email existed") {
                     setMessage("Email đã tồn tại");
                     errors.email = true;

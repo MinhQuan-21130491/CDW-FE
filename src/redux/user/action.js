@@ -66,9 +66,10 @@ export const changePassword = (data) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: "CHANGE_PASSWORD_SUCCESS", payload: resData.message });
     } else {
+      console.log(resData);
       dispatch({
         type: "CHANGE_PASSWORD_FAILURE",
-        payload: resData.errors.password,
+        payload: resData,
       });
     }
   } catch (error) {
@@ -94,7 +95,8 @@ export const forgetPassword = (data) => async (dispatch) => {
     if (res.ok) {
       dispatch({ type: "FORGET_PASSWORD_SUCCESS", payload: resData.message });
     } else {
-      dispatch({ type: "FORGET_PASSWORD_FAILURE", payload: resData.message });
+      console.log(resData);
+      dispatch({ type: "FORGET_PASSWORD_FAILURE", payload: resData });
     }
   } catch (error) {
     // Dispatch lỗi nếu có
@@ -104,3 +106,10 @@ export const forgetPassword = (data) => async (dispatch) => {
     });
   }
 };
+export const resetMessage = () => ({
+  type: "RESET_MESSAGE",
+});
+
+export const resetError = () => ({
+  type: "RESET_ERROR",
+});

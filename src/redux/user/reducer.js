@@ -36,8 +36,12 @@ export const userReducer = (state = initialState, action) => {
         ...state,
         message: action.payload,
         loading: false,
+        error: null,
       };
-
+    case "RESET_MESSAGE":
+      return { ...state, message: null };
+    case "RESET_ERROR":
+      return { ...state, error: null };
     case "SEARCH_USER_FAILURE":
     case "GET_ALL_USER_FAILURE":
     case "CHANGE_PASSWORD_FAILURE":
