@@ -6,6 +6,7 @@ import UserCard from './UserCard';
 import NewGroup from './NewGroup';
 import { useDispatch, useSelector } from 'react-redux';
 import { searchUser } from '../redux/user/action';
+import { useTranslation } from 'react-i18next';
 
 export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) {
   const[newGroup, setNewGroup] = useState(false);
@@ -15,6 +16,7 @@ export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) 
   const token = localStorage.getItem("token");
   const { users, error, loading } = useSelector(state => state.user);
   const {user} = useSelector(state => state.auth);
+  const {t} = useTranslation();
   const dispatch = useDispatch();
   const handleRemoveMember = (member) => {
     setGroupMember(prev => {
@@ -52,7 +54,7 @@ export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) 
         <> 
           <div className='pb-3 pl-3 pt-20 flex items-center space-x-4 bg-[#008069] text-white  '>
             <BsArrowLeft className='cursor-pointer text-2xl font-bold' onClick={() =>handleNavigate(false)}/>
-            <p className=' font-semibold text-xl '>Tạo nhóm chat</p>
+            <p className=' font-semibold text-xl '>{t('create_group')}</p>
           </div>
           <div className='relative bg-white pt-4'>
             <div className='flex space-x-2 flex-wrap'> 
@@ -62,7 +64,7 @@ export default function CreateGroup({handleNavigate, onlineUsers, stompClient}) 
               <input 
                 className='border-none outline-none bg-slate-200 rounded-md w-[93%] py-2 pl-9 pr-4'
                 type='text'
-                placeholder='Tìm kiếm bạn bè'
+                placeholder={t('search')}
                 onChange={(e) => {
                     setSearch(e.target.value)
                     handleSearch(e.target.value)

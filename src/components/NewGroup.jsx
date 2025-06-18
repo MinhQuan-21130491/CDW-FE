@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { BiSolidImageAdd } from "react-icons/bi";
 import { createaGroupChat } from '../redux/chat/action';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const usersId = Array.from(members.values()).map(user => user.id);
@@ -15,6 +16,8 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
   const {status: statusCreateGroup, loading} = useSelector(state => state.chat)
   const dispatch = useDispatch();
   const token = localStorage.getItem("token");
+  const[messageAlert, setMessageAlert] = useState();
+  const {t} = useTranslation();
   const handleCreateGroup = () => {
     const chatData = {
       token: token,
@@ -48,6 +51,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
                 setStatus(true);
                 setOpenSnackBar(true);
                 setClick(false);
+                setMessageAlert(t('success_create_group'));
                 stompClient.publish({
                   destination: '/app/broadcast-notification',
                   body: JSON.stringify({
@@ -67,6 +71,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
                   setStatus(false);
                   setOpenSnackBar(true);
                   setClick(false);
+                  setMessageAlert(t('error_create_group'));
                 }
             }
         }
@@ -75,7 +80,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
     <div className=' w-full h-full bg-[#f0f2f5] '>
         <div className='pb-3 pl-3 pt-20 flex items-center space-x-4 bg-[#008069] text-white'>
             <BsArrowLeft className='cursor-pointer text-2xl font-bold' onClick={() =>handleSetNewGroup(false)}/>
-            <p className='cursor-pointer font-semibold text-xl '>Nhóm chat mới</p>
+            <p className='cursor-pointer font-semibold text-xl '>{t('new_group')}</p>
         </div>
         {/* update profile pic section */}
         <div className="flex flex-col justify-center items-center my-8">
@@ -85,7 +90,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
               <div className=" w-[12vw] h-[12vw] rounded-full bg-white flex items-center justify-center mb-5">
                   <BiSolidImageAdd className="text-[#008069]" size={40} />
               </div>
-              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>{t('pick_image')}</span>
             </div>
             
           ): (
@@ -97,7 +102,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
                 }
                 className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer mb-5"
               />
-              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+              <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>{t('pick_image')}</span>
             </div>
           )}
          
@@ -108,12 +113,12 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
 
         {/* name section */}
         <div className='px-3 bg-white'>
-            <p className='pt-3 font-semibold'>Tên nhóm chat</p>  
+            <p className='pt-3 font-semibold'>{t('group_name')}</p>  
           <div className='flex items-center justify-between' >
               <input
                 className='w-[100%] outline-none border-b-2 border-green-600 mt-2 pb-1 mb-3' 
                 type='text' 
-                placeholder='Nhập tên nhóm chat' 
+                placeholder={t('placeholder_group_name')}
                 onChange={(e) => setGroupName(e.target.value)}
                 value={groupName}
                 />
@@ -143,7 +148,7 @@ function NewGroup({handleSetNewGroup, members, handleNavigate, stompClient}) {
               autoHideDuration={6000}
               onClose={handleSnackBarClose }
             >
-                <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Tạo nhóm thành công':'Tạo nhóm thất bại'}</Alert>
+                <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{messageAlert}</Alert>
       </Snackbar>
     </div>
   )

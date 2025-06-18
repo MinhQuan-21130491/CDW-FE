@@ -7,6 +7,7 @@ import { RxResume } from "react-icons/rx";
 import { IoPause } from "react-icons/io5";
 import { useDispatch, useSelector } from 'react-redux';
 import { getStoriesByUser, removeStory } from '../redux/story/action';
+import { useTranslation } from 'react-i18next';
 
 export default function StatusViewer({ stories, ownerStory}) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -25,6 +26,8 @@ export default function StatusViewer({ stories, ownerStory}) {
     const [isRemove, setIsRemove] = useState(false);
     const [openSnackBar, setOpenSnackBar] = useState(false);
     const [clickRemove, setClickRemove] = useState(false);
+    const [messageAlert, setMessageAlert] = useState();
+    const{t} = useTranslation();
     console.log(currentIndex)
     // ✅ Xử lý duration
     const handleDuration = (duration) => {
@@ -96,7 +99,6 @@ export default function StatusViewer({ stories, ownerStory}) {
         setCurrentIndex(0);
         setProgress(0);
         setDurations([]);
-        console.log("goi ham nay")
     }, [stories, ownerStory]);
     
     useEffect(() => {
@@ -106,6 +108,13 @@ export default function StatusViewer({ stories, ownerStory}) {
              setIsRemove(true);
              setClickRemove(false);
              setAnchorElStory(null);
+             setMessageAlert(t('success_delete_story'));
+        }else if(clickRemove){
+             setOpenSnackBar(true);
+             setIsRemove(true);
+             setClickRemove(false);
+             setAnchorElStory(null);
+             setMessageAlert(t('error_delete_story'));
         }
     }, [response])
     return (
@@ -170,7 +179,7 @@ export default function StatusViewer({ stories, ownerStory}) {
                         </div>
                     </>
                 ) : (
-                    <p className='text-white'>Người dùng chưa chia sẻ story.</p>
+                    <p className='text-white'>{t("no_story")}</p>
                 )}
             </div>
             <Snackbar 
@@ -179,7 +188,7 @@ export default function StatusViewer({ stories, ownerStory}) {
                     onClose={handleSnackBarClose}
                   >
                     <Alert onClose={handleSnackBarClose} severity={isRemove ? 'success' : 'error'} sx={{ width: '100%' }}>
-                      {isRemove ? 'Xóa story thành công!' : 'Xóa story thất bại!'}
+                      {messageAlert}
                     </Alert>
             </Snackbar>
         </div>

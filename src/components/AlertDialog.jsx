@@ -6,12 +6,14 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import Slide from '@mui/material/Slide';
+import { useTranslation } from 'react-i18next';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
 export default function AlertDialog({openAlertDialog, handleCloseAlertDialog, title, content, handleConfirm, handleCancel}) {
+  const {t} = useTranslation();
   return (
     <React.Fragment>
       <Dialog
@@ -30,8 +32,8 @@ export default function AlertDialog({openAlertDialog, handleCloseAlertDialog, ti
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel}>Hủy</Button>
-          <Button onClick={handleConfirm}>Xác nhận</Button>
+          <Button onClick={handleCancel}>{t('cancel')}</Button>
+          <Button onClick={handleConfirm}>{t('accept')}</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

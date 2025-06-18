@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../redux/auth/Action';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import { avatar_default } from '../assets'
+import { useTranslation } from 'react-i18next';
 
   export default function Profile({ handleNavigate, user, onUpdateUser}) {
     const [flag, setFlag] = useState(false);
@@ -15,7 +16,9 @@ import { avatar_default } from '../assets'
     const[click, setClick] = useState(false);
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
-
+    const [message, setMessage] = useState();
+    const [pickImage, setPickImage] = useState(false);
+    const { t } = useTranslation();
     const handleSelectPicture = (event) => {
       const file = event.target.files[0];
       if (file) {
@@ -26,6 +29,7 @@ import { avatar_default } from '../assets'
           };
           reader.readAsDataURL(file);
           setClick(false);
+          setPickImage(true);
         }else {
           // xử lý lỗi sau
         }
@@ -41,6 +45,7 @@ import { avatar_default } from '../assets'
       setClick(true);
       setFlag(false);
       setLoading(true);
+      setPickImage(false);
 
     }
     const handleSnackBarClose = () => {
@@ -53,9 +58,20 @@ import { avatar_default } from '../assets'
                 setStatus(true);
                 setOpenSnackBar(true)
                 setLoading(false);
-            }else{
+                setClick(false);
+                setMessage(t(update?.message));
+            }else if(update?.errors?.full_name === 'error_length_name'){
                 setStatus(false)
                 setOpenSnackBar(true)
+                setClick(false);
+                setLoading(false);
+                setMessage(t('error_length_name'));
+            }else {
+                setStatus(false)
+                setOpenSnackBar(true)
+                setClick(false);
+                setLoading(false);
+                setMessage(t('error'));
             }
         }
     },[update])
@@ -64,7 +80,7 @@ import { avatar_default } from '../assets'
       {/* Header */}
       <div className="pb-3 pl-3 pt-20 flex items-center space-x-4 bg-[#008069] text-white">
         <BsArrowLeft className="cursor-pointer text-2xl font-bold" onClick={() => handleNavigate(false)} />
-        <p className="cursor-pointer font-semibold text-xl">Thông tin cá nhân</p>
+        <p className="cursor-pointer font-semibold text-xl">{t('person_infor')}</p>
       </div>
 
       {/* Cập nhật ảnh đại diện */}
@@ -75,7 +91,7 @@ import { avatar_default } from '../assets'
                         <div className=" w-[12vw] h-[12vw] rounded-full bg-white flex items-center justify-center mb-5">
                             <BiSolidImageAdd className="text-[#008069]" size={40} />
                         </div>
-                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>{t("pick_image")}</span>
                       </div>
                       
                     ): (
@@ -87,7 +103,7 @@ import { avatar_default } from '../assets'
                           }
                           className="rounded-full w-[12vw] h-[12vw] object-cover cursor-pointer mb-5"
                         />
-                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>Chọn ảnh</span>
+                        <span className='p-2 px-4 text-[#008069] border-[#008069] border-[1px] rounded-md'>{t("pick_image")}</span>
                       </div>
                     )}
         </label>
@@ -116,7 +132,7 @@ import { avatar_default } from '../assets'
       </div>
 
       {/* Hiển thị nút lưu nếu có thay đổi */}
-      {(picture !== user?.profile_picture || username !== user?.full_name) && !click && (
+      {(picture !== user?.profile_picture || username !== user?.full_name ) && !click && pickImage && (
         <div className="fixed md:w-[350px] sm:w-[100px] bottom-[2.15rem] py-10 flex items-center justify-center text-5xl cursor-pointer">
             <div className={`${!loading ? 'bg-[#008069]' : 'bg-gray-400'} rounded-full p-2 w-12 h-12 flex items-center justify-center`}>
               {loading ? (
@@ -135,7 +151,7 @@ import { avatar_default } from '../assets'
         autoHideDuration={6000}
         onClose={handleSnackBarClose }
       >
-          <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{status?'Thay đổi thông tin thành công!':'Thay đổi thông tin thất bại!'}</Alert>
+          <Alert onClose={handleSnackBarClose } severity={status?'success':'error'} sx={{width:'100%'}}>{message}</Alert>
       </Snackbar>
     </div>
   );

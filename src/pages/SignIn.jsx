@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { currentUser, login } from '../redux/auth/Action';
 import { MyButton } from '../components/Button';
+import LanguageSwitch from '../components/LanguageSwitch';
+import { useTranslation } from 'react-i18next';
 
 const SignIn = () => {
     const [inputEmail, setInputEmail] = useState('');
@@ -15,6 +17,7 @@ const SignIn = () => {
     const [message, setMessage] = useState('');
     const [isFill, setIsFill] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
+    const {t} = useTranslation();
     
     const { signin } = useSelector(state => state.auth);
     const dispatch = useDispatch();
@@ -50,7 +53,7 @@ const SignIn = () => {
 
         if (isSuccess) {
             localStorage.setItem("token", signin.token);
-            setMessage("Đăng nhập thành công");
+            setMessage(t('success_login'));
             setLoading(false);
             setStatus(true);
             setOpenSnackBar(true);
@@ -58,14 +61,16 @@ const SignIn = () => {
             const timeoutId = setTimeout(() => navigate("/", { replace: true }), 2000);
             return () => clearTimeout(timeoutId);
         } else {
-            if (signin.message === "Wrong password") {
-                setMessage("Mật khẩu không chính xác");
+            if (signin.message === "error_wrong_password") {
+                setMessage(t('error_wrong_password'));
                 errors.password = true;
             } else if (signin.message === "Email not found") {
-                setMessage("Email không tồn tại");
+                setMessage(t('error_email_not_found'));
                 errors.email = true;
             } else {
-                setMessage("Đăng nhập thất bại");
+                setMessage(t('error_error_login'));
+                errors.password = true;
+                errors.email = true;
             }
 
             setFieldErrors(errors);
@@ -81,14 +86,17 @@ const SignIn = () => {
 
     return (
         <div className='bg-[#e8e9ec]'>
+            <div className='absolute  top-2 right-4'>
+                <LanguageSwitch />
+            </div>
             <div className='flex justify-center h-screen items-center'>
                 <div className='w-[30%] p-10 shadow-md bg-white'>
-                    <h1 className='font-bold text-xl text-center'>ĐĂNG NHẬP</h1>
+                    <h1 className='font-bold text-xl text-center'>{t('login_title')}</h1>
                     <form onSubmit={handleSubmit} className='space-y-5'>
                         <div>
-                            <p className='mb-2'>Email</p>
+                            <p className='mb-2'>{t('email')}</p>
                             <input
-                                placeholder='Nhập email của bạn'
+                                placeholder={t('placeholder_email')}
                                 onChange={handleInputChange(setInputEmail, 'email')}
                                 value={inputEmail}
                                 type='text'
@@ -96,9 +104,9 @@ const SignIn = () => {
                             />
                         </div>
                         <div>
-                            <p className='mb-2'>Mật khẩu</p>
+                            <p className='mb-2'>{t('password')}</p>
                             <input
-                                placeholder='Nhập mật khẩu của bạn'
+                                placeholder={t('placeholder_password')}
                                 onChange={handleInputChange(setInputPassword, 'password')}
                                 value={inputPassword}
                                 type='password'
@@ -106,14 +114,14 @@ const SignIn = () => {
                             />
                         </div>
                         <div className='text-end'>
-                            <Link to="/forget-password" className='text-sm text-green-600'>Quên mật khẩu?</Link>
+                            <Link to="/forget-password" className='text-sm text-green-600'>{t('forget_pw')}</Link>
                             <p className='text-sm pt-1'>
-                                Bạn chưa có tài khoản?
-                                <Link to="/signup" className='text-sm text-green-600 ml-1'>Đăng ký</Link>
+                               {t('dont_have_account')}
+                                <Link to="/signup" className='text-sm text-green-600 ml-1'>{t('signup')}</Link>
                             </p>
                         </div>
                         <div>
-                            <MyButton text={"Đăng nhập"} loading={loading} input={isFill} />
+                            <MyButton text={t('login')} loading={loading} input={isFill} />
                         </div>
                     </form>
                 </div>

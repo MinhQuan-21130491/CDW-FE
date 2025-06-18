@@ -5,6 +5,9 @@ import { IoMdArrowBack } from "react-icons/io"
 import { useNavigate } from 'react-router-dom'
 import { changePassword, resetError, resetMessage } from '../redux/user/action'
 import { useDispatch, useSelector } from 'react-redux'
+import { t } from 'i18next'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitch from '../components/LanguageSwitch'
 
 export const ChangePassword = () => {
     const [openSnackBar, setOpenSnackBar] = useState(false)
@@ -22,7 +25,7 @@ export const ChangePassword = () => {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true)
-
+    const {t} = useTranslation();
     const handleSnackBarClose = () => setOpenSnackBar(false)
 
     const handleSubmit = (e) => {
@@ -53,22 +56,22 @@ export const ChangePassword = () => {
     useEffect(() => {
         if (error) {
             const errorPw = error?.errors?.password
-            if (error.message === "Wrong password") {
-                setMessageAlert("Mật khẩu hiện tại không chính xác")
+            if (error.message === "error_wrong_password") {
+                setMessageAlert(t('error_wrong_password'))
                 setErrorCurrentPw(true)
                 dispatch(resetError());
             } else if (errorPw) {
-                setMessageAlert("Mật khẩu phải có ít nhất 6 ký tự, chứa chữ hoa, chữ thường, số và ký tự đặc biệt")
+                setMessageAlert(t('error_password_partern'))
                 setErrorNewPw(true)
                 dispatch(resetError());
             } else {
-                setMessageAlert("Đã xảy ra lỗi khi đổi mật khẩu")
+                setMessageAlert(t('error_error_change_pw'))
                 dispatch(resetError())
             }
             setIsSuccess(false)
             setOpenSnackBar(true)
-        } else if (message === "Change password successful") {
-            setMessageAlert("Thay đổi mật khẩu thành công")
+        } else if (message === "success_change_password") {
+            setMessageAlert(t('success_change_password'))
             setIsSuccess(true)
             setOpenSnackBar(true)
             // Reset form
@@ -92,18 +95,21 @@ export const ChangePassword = () => {
 
     return (
         <div className='bg-[#e8e9ec]'>
+            <div className='absolute top-2 right-4 z-10'>
+                <LanguageSwitch />
+            </div>
             <div className='flex justify-center h-screen items-center relative'>
                 <IoMdArrowBack
                     className='absolute top-10 left-10 text-2xl cursor-pointer'
                     onClick={() => navigate(-1)}
                 />
                 <div className='w-[30%] p-10 pt-4 shadow-md bg-white '>
-                    <h1 className='font-bold text-xl text-center'>Đổi mật khẩu</h1>
+                    <h1 className='font-bold text-xl text-center'>{t('change_pw_title')}</h1>
                     <form onSubmit={handleSubmit} className='space-y-5'>
-                        <div>
-                            <p className='mb-2'>Mật khẩu hiện tại</p>
+                        <div className='pt-4'>
+                            <p className='mb-2'>{t('current_pw')}</p>
                             <input
-                                placeholder='Nhập mật khẩu hiện tại'
+                                placeholder={t('placeholder_current_pw')}
                                 onChange={(e) => {
                                     setInputCurrentPw(e.target.value)
                                     setErrorCurrentPw(false)
@@ -114,9 +120,9 @@ export const ChangePassword = () => {
                             />
                         </div>
                         <div>
-                            <p className='mb-2'>Mật khẩu mới</p>
+                            <p className='mb-2'>{t('new_pw')}</p>
                             <input
-                                placeholder='Nhập mật khẩu mới'
+                                placeholder={t('placeholder_new_pw')}
                                 onChange={(e) => {
                                     setInputPw(e.target.value)
                                     setErrorNewPw(false)
@@ -127,9 +133,9 @@ export const ChangePassword = () => {
                             />
                         </div>
                         <div>
-                            <p className='mb-2'>Nhập lại mật khẩu mới</p>
+                            <p className='mb-2'>{t('confirm_new_pw')}</p>
                             <input
-                                placeholder='Nhập lại mật khẩu mới'
+                                placeholder={t('placeholder_confirm_new_pw')}
                                 onChange={(e) => {
                                     setInputConfirmPw(e.target.value)
                                     setErrorConfirmPw(false)
@@ -146,7 +152,7 @@ export const ChangePassword = () => {
                             variant='contained'
                             disabled={isSubmitDisabled}
                         >
-                            Xác nhận
+                            {t('confirm')}
                         </Button>
                     </form>
                 </div>

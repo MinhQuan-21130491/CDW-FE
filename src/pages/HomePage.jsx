@@ -1,8 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AiOutlineSearch } from 'react-icons/ai'
-import { BiCommentDetail } from 'react-icons/bi'
 import { BsEmojiSmile, BsFilter, BsMicFill, BsThreeDotsVertical } from 'react-icons/bs'
-import { TbCircleDashed } from 'react-icons/tb'
 import ChatCard from '../components/ChatCard'
 import { avatar_default, logo } from '../assets'
 import { TbPhotoEdit } from "react-icons/tb";
@@ -16,7 +14,6 @@ import CreateGroup from '../components/CreateGroup'
 import { useDispatch, useSelector } from 'react-redux'
 import { currentUser } from '../redux/auth/Action'
 import { getAllUser, searchUser } from '../redux/user/action'
-import UserCard from '../components/UserCard'
 import { sendMessage, sendMessageGroup } from '../redux/message/action'
 import { deleteChat, getAllChat, getChatById, getSingleChat, removeUserFromGroup } from '../redux/chat/action'
 import EmojiPicker from "emoji-picker-react";
@@ -27,6 +24,9 @@ import GroupManagementModal from '../components/ManageChatGroup'
 import { BASE_API_URL } from '../config/api'
 import { ViewMember } from '../components/ViewMember'
 import AlertDialog from '../components/AlertDialog'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitch from '../components/LanguageSwitch'
+
 
 const LoadingOverlay = styled('div')({
   height: '100%',
@@ -74,6 +74,7 @@ export default function HomePage() {
     const [openAlertDialogRemoveChat, setOpenAlertDialogRemoveChat] = useState(false);
     const [isOnline, setIsOnline] = useState(false);
     const status = useRef("");
+    const { t } = useTranslation();
     const handleSnackBarClose = () => {
         setOpenSnackBar(false);
     };
@@ -515,7 +516,7 @@ export default function HomePage() {
                     dispatch(getChatById(chatData))
                 }
         }else {
-            //xử lý lỗi ở đây nha quân
+            console.log("xay ra loi");
         }
     }, [message])
 
@@ -561,7 +562,7 @@ export default function HomePage() {
         handleOpenViewMember();
     }
     useEffect(() => {
-        if(msg === "Out group successfully") {
+        if(msg === "success_out_group") {
             stompClient.current.publish({
               destination: '/app/broadcast-notification',
               body: JSON.stringify({
@@ -577,13 +578,13 @@ export default function HomePage() {
             dispatch(getAllChat({token: token, userId: user?.id}));
             setOpenSnackBar(true);
             setCurrentChat({show:false});
-            status.current = "Rời nhóm thành công"
+            status.current = t('success_out_group')
         }
-        if(msg === "Remove chat successfully") {
+        if(msg === "success_remove_chat") {
             dispatch(getAllChat({token: token, userId: user?.id}));
             setOpenSnackBar(true);
             setCurrentChat({show:false});
-            status.current = "Xóa chat thành công"
+            status.current = t('success_remove_chat')
         }
     }, [msg])
       useEffect(() => {
@@ -607,10 +608,16 @@ export default function HomePage() {
         }
        
     }, [onlineUsers, userChatWith])
+
+  
   return (
     <div className='relative h-screen bg-slate-300 '>
-        <div className='w-full py-14 bg-primeColor '></div>
-        <div className='flex bg-[#f0f2f5] h-[90vh] absolute top-9 left-10 right-10 z-50 shadow-md'>
+        <div className='w-full py-14 bg-primeColor relative '>
+            <div className="absolute top-2 right-4 z-10">
+                <LanguageSwitch />
+            </div>
+        </div>
+        <div className='flex bg-[#f0f2f5] h-[90vh] absolute top-11 left-10 right-10 z-50 shadow-md'>
             <div className='left md:w-[350px] sm:w-[100px] bg-white h-full flex flex-col' >
                 {/* Profile */}
                 {isProfile && (<div className='w-full h-full bg-[#f0f2f5]'><Profile handleNavigate = {handleNavigateProfile}  user={user} onUpdateUser={handleUserUpdate}/></div>)}
@@ -649,10 +656,10 @@ export default function HomePage() {
                                     'aria-labelledby': 'basic-button',
                                     }}
                                 >
-                                    <MenuItem onClick={() => handleNavigateProfile(true)}>Thông tin</MenuItem>
-                                    <MenuItem onClick={() => handleCreateGroup(true)}>Tạo nhóm</MenuItem>
-                                    <MenuItem onClick={() => handleNavigateChangePassword()}>Đổi mật khẩu</MenuItem>
-                                    <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+                                    <MenuItem onClick={() => handleNavigateProfile(true)}>{t('infor')}</MenuItem>
+                                    <MenuItem onClick={() => handleCreateGroup(true)}>{t('create_group')}</MenuItem>
+                                    <MenuItem onClick={() => handleNavigateChangePassword()}>{t('change_pw')}</MenuItem>
+                                    <MenuItem onClick={handleLogout}>{t('log_out')}</MenuItem>
                                 </Menu>
                             </div>
                         </div>
@@ -661,7 +668,7 @@ export default function HomePage() {
                                 <input 
                                     className='border-none outline-none bg-slate-200 rounded-md w-[93%] py-2 pl-9 pr-4'
                                     type='text'
-                                    placeholder='Tìm kiếm bạn bè'
+                                    placeholder={t('search')}
                                     onChange={(e) => {
                                         setSearch(e.target.value)
                                         handleSearch(e.target.value)
@@ -693,7 +700,7 @@ export default function HomePage() {
                                 </div>
                             ) : (
                                 <div className="flex justify-center mt-5">
-                                <p className="text-sm text-gray-500">Không có bạn bè phù hợp</p>
+                                <p className="text-sm text-gray-500">{t('no_suitable_friends')}</p>
                                 </div>
                             )
                             ) : (
@@ -737,7 +744,7 @@ export default function HomePage() {
                                 })
                             ) : (
                                 <div className="text-center text-sm text-gray-400 mt-4">
-                                    Bắt đầu trò chuyện với bạn bè!
+                                    {t('start_chat')}
                                 </div>
                             )
                         )}
@@ -753,7 +760,7 @@ export default function HomePage() {
                         src={logo}
                         className='object-cover'
                         />
-                        <h1 className='text-2xl text-gray-600'>Trò chuyện trực tuyến mọi lúc, mọi nơi.</h1>
+                        <h1 className='text-2xl text-gray-600'>{t('slogan')}</h1>
                     </div>
                 </div>
                 }  
@@ -798,16 +805,16 @@ export default function HomePage() {
                                             }}
                                         >   {userChatWith?.chat_name ? (
                                                 currentChat?.isAdmin ? (
-                                                <MenuItem onClick={() => handleManageChat()}>Quản lý nhóm</MenuItem>                                          
+                                                <MenuItem onClick={() => handleManageChat()}>{t('manage_group')}</MenuItem>                                          
                                             ): (
                                                 <>
-                                                    <MenuItem onClick={() => handleViewMember()}>Xem thành viên</MenuItem>                                          
-                                                    <MenuItem onClick={() => handleOpenAlertDialog()}>Rời nhóm</MenuItem>
-                                                    <MenuItem onClick={handleOpenAlertDialogRemoveChat}>Xóa chat</MenuItem>
+                                                    <MenuItem onClick={() => handleViewMember()}>{t('see_members')}</MenuItem>                                          
+                                                    <MenuItem onClick={() => handleOpenAlertDialog()}>{t('out_group')}</MenuItem>
+                                                    <MenuItem onClick={handleOpenAlertDialogRemoveChat}>{t('delete')}</MenuItem>
                                                 </>
                                             )
                                         ): (
-                                            <MenuItem onClick={handleOpenAlertDialogRemoveChat}>Xóa chat</MenuItem>
+                                            <MenuItem onClick={handleOpenAlertDialogRemoveChat}>{t('delete')}</MenuItem>
                                         )}
                                             
                                         </Menu>
@@ -874,7 +881,7 @@ export default function HomePage() {
                                     className='py-2 px-2 outline-none border-none bg-white rounded-lg w-[85%]' 
                                     type='text' 
                                     onChange={(e) => setContent(e.target.value)}
-                                    placeholder='Nhập tin nhắn...'
+                                    placeholder={t('placeholder_message')}
                                     value={content}
                                     onKeyPress={(e) => {
                                         if(e.key == "Enter") {

@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { FaCircle } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { avatar_default } from '../assets'
+import { useTranslation } from 'react-i18next';
 
 export default function ChatCard({user, isHide, messageLast, time, group, isMe, isOnline, typeMessageLast}) {
   const [content, setContent] = useState();
-
+  const{t} = useTranslation();
   useEffect(() => {
       if(typeMessageLast) {
         console.log(typeMessageLast)
@@ -46,7 +47,7 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
                               {content}
                             </p>
                             <div className='w-[30%] flex space-x-1 items-center'>
-                              <p className='text-xs text-gray-400'>{time && formatTime(time) || ''}</p>
+                              <p className='text-xs text-gray-400'>{time && formatTime(time, t) || ''}</p>
                               {/* <FaCircle className='text-xs text-blue-600' /> */}
                             </div>
                          </div>
@@ -60,18 +61,18 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
     </div>
   )
 }
-function formatTime(dateString) {
+function formatTime(dateString, t) {
     const date = new Date(dateString);
     const dateNow = new Date();
     const diffInMs = dateNow - date;
     const diffInHour = diffInMs/(1000*3600)
     let result = ''
     if(diffInHour< 1) {
-      result = (diffInHour * 60).toFixed(0) + " phút";
+      result = (diffInHour * 60).toFixed(0) +" "+ t('minute');
     }else if(diffInHour > 1 && diffInHour < 24) {
-      result = diffInHour.toFixed(0) + " giờ"
+      result = diffInHour.toFixed(0) +" "+ t('hour');
     }else{
-      result = (diffInHour/24).toFixed(0) + ' ngày'
+      result = (diffInHour/24).toFixed(0) +" "+ t('day');
     }
     return result;
   }

@@ -8,6 +8,7 @@ import ReactPlayer from 'react-player';
 import { Alert, CircularProgress, Snackbar } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { addStory, getStoriesByUser } from '../redux/story/action';
+import { useTranslation } from 'react-i18next';
 
 const style = {
   position: 'absolute',
@@ -83,6 +84,8 @@ export default function AddStoryModal({ open, onClose, user }) {
   const {response, error, loading } = useSelector(state => state.story);
   const [status, setStatus] = useState(false);
   const [addStr, setAddStr] = useState(false);
+  const [message, setMessage] = useState(false);
+  const{t} = useTranslation();
   const handleSnackBarClose = () => {
     setOpenSnackBar(false);
   };
@@ -91,7 +94,9 @@ export default function AddStoryModal({ open, onClose, user }) {
     const file = event.target.files[0];
     if (file) {
       if(file.size > maxFileSize) {
-        alert("Ảnh/video vượt quá 20MB");
+        setMessage(t('media_big_length'));
+        setStatus(false);
+        setOpenSnackBar(true);
         return;
       } 
       const fileType = file.type.startsWith('image/') ? 'image' : 'video';
@@ -127,9 +132,11 @@ export default function AddStoryModal({ open, onClose, user }) {
       handleOnclose();
       setMedia({ type: '', file: '', url: '' });
       setAddStr(false);
+      setMessage(t('success_add_story'))
       dispatch(getStoriesByUser({token: token, userId:user?.id}))
     } else if (error) {
       setStatus(false);
+      setMessage(t('error_add_story'))
       setOpenSnackBar(true);
     }
   }, [response, error]);
@@ -150,13 +157,13 @@ export default function AddStoryModal({ open, onClose, user }) {
           )}
 
           <Typography id="modal-modal-title" variant="h6" component="h2" color="white">
-            Thêm hình ảnh/video vào story
+            {t('add_image_video')}
           </Typography>
 
           {!media.url ? (
             <Box sx={{ mt: 2 }}>
               <Button variant="contained" component="label">
-                Chọn hình ảnh/video
+               {t('pick_image_video')}
                 <input
                   type="file"
                   hidden
@@ -207,7 +214,7 @@ export default function AddStoryModal({ open, onClose, user }) {
         onClose={handleSnackBarClose}
       >
         <Alert onClose={handleSnackBarClose} severity={status ? 'success' : 'error'} sx={{ width: '100%' }}>
-          {status ? 'Đăng story thành công!' : 'Đăng story thất bại!'}
+          {message}
         </Alert>
       </Snackbar>
     </div>

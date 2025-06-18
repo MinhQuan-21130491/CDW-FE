@@ -25,6 +25,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addUserToGroup, editGroup, removeUserFromGroup } from '../redux/chat/action';
 import { searchUser } from '../redux/user/action';
 import AlertDialog from './AlertDialog';
+import { useTranslation } from 'react-i18next';
 
 const LoadingOverlay = styled('div')({
   position: 'absolute',
@@ -57,6 +58,8 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
   const [userId, setUserId] = useState();
   const [groupAvatar, setGroupAvatar] = useState(null);
   const [groupAvatarPreview, setGroupAvatarPreview] = useState('');
+  const { t } = useTranslation();
+
   const handleOpenAlertDialog = (userId) => {
         setUserId(userId);
         setOpenAlertDialog(true);
@@ -115,7 +118,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
   };
 
   useEffect(() => {
-        if(message === "Rename group successfully" && click) {
+        if(message === "success_edit_group" && click) {
         setGroupName("");
         setIsDisable(true);
         stompClient.publish({
@@ -133,8 +136,8 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
           setClick(false);   
           setIsShow(true);
           setOpenSnackBar(true);
-          status.current = "Thay đổi tên nhóm thành công";
-        }else if(message === "Add user to group success" && click) {
+          status.current = t('success_edit_group');
+        }else if(message === "success_add_user" && click) {
            stompClient.publish({
             destination: '/app/broadcast-notification',
             body: JSON.stringify({
@@ -148,10 +151,10 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
         });
           reloadUserInChat();  
           setIsShow(true);
-          status.current = "Thêm thành viên thành công";
+          status.current =t('success_add_user');
           setOpenSnackBar(true);
           setClick(false);   
-        }else if(message === "Remove user in group successfully" && click) {
+        }else if(message === "success_remove_user" && click) {
            stompClient.publish({
               destination: '/app/broadcast-notification',
               body: JSON.stringify({
@@ -165,11 +168,11 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
             });
           reloadUserInChat();  
           setIsShow(true);
-          status.current = "Xóa thành viên thành công";
+          status.current = t('success_remove_user');
           setOpenSnackBar(true);
           setClick(false);   
-        }else if(message === "User already in group" && click) {
-          status.current = "Thành viên đã tồn tại trong nhóm của bạn";
+        }else if(message === "user_existed_in_group" && click) {
+          status.current = t('user_existed_in_group');
           setOpenSnackBar(true);
           setClick(false);   
           reloadUserInChat();  
@@ -197,12 +200,12 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
         <CircularProgress color="white" />
         </LoadingOverlay>
       )}
-      <DialogTitle>Quản lý nhóm</DialogTitle>
+      <DialogTitle>{t('manage_group')}</DialogTitle>
       <DialogContent>
         <Tabs value={tabIndex} onChange={(e, val) => setTabIndex(val)} sx={{ mb: 2 }}>
-          <Tab label="Đổi tên nhóm" />
-          <Tab label="Thêm thành viên" />
-          <Tab label="Xem thành viên" />
+          <Tab label={t('edit_group')} />
+          <Tab label={t('add_member')} />
+          <Tab label={t('see_members')} />
         </Tabs>
 
         {/* Tab 1: Rename group */}
@@ -215,7 +218,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
                 sx={{ width: 56, height: 56, mr: 2 }}
               />
               <Button variant="outlined" component="label">
-                Chọn ảnh
+                {t('pick_image')}
                 <input
                   hidden
                   accept="image/*"
@@ -234,7 +237,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
 
             {/* Nhập tên nhóm */}
             <TextField
-              label="Tên nhóm mới"
+              label={t('new_name_group')}
               fullWidth
               value={groupName}
               onChange={(e) => {
@@ -246,7 +249,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
 
             {/* Nút lưu */}
             <Button disabled={isDisable} variant="contained" onClick={handleEditGroup}>
-              Lưu
+              {t("save")}
             </Button>
           </Box>
         )}
@@ -256,7 +259,7 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
         {tabIndex === 1 && (
           <Box>
             <TextField
-              label="Tìm kiếm người dùng"
+              label={t('search')}
               fullWidth
               value={searchTerm}
               onChange={(e) => {
@@ -321,10 +324,11 @@ export default function GroupManagementModal({ open, handleClose, chat, token, s
       </Snackbar>
         <AlertDialog openAlertDialog ={openAlertDialog} 
                      handleCloseAlertDialog = {handleCloseAlertDialog} 
-                     title = "Xác nhận xóa thành viên" 
-                     content = "Bạn có chắc chắn muốn xóa thành viên này không?"  
+                     title ={t('confirm')} 
+                     content = {t('message_confirm')}  
                      handleConfirm = {() => handleRemoveMember(userId)} 
-                     handleCancel = {handleCloseAlertDialog}/>     
+                     handleCancel = {handleCloseAlertDialog}
+                     />     
     </Dialog>
   );
 }

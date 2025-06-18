@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { forgetPassword } from '../redux/user/action';
 import { MyButton } from '../components/Button';
 import { useEffect, useRef, useState } from 'react';
+import LanguageSwitch from '../components/LanguageSwitch';
+import { useTranslation } from 'react-i18next';
 
 export const ForgetPassword = () => {
     const [openSnackBar, setOpenSnackBar] = useState(false);
@@ -16,13 +18,14 @@ export const ForgetPassword = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { message, error, loading } = useSelector(state => state.user);
+    const {t} = useTranslation();
     const handleSnackBarClose = () => setOpenSnackBar(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         if (inputEmail.trim() === "") {
-            setMessageAlert("Vui lòng nhập email");
+            setMessageAlert(t('error_blank_field_email'));
             status.current = false;
             setOpenSnackBar(true);
             return;
@@ -42,16 +45,16 @@ export const ForgetPassword = () => {
 
         const emailError = error?.errors?.email;
         let timeOut;
-        if (emailError === "invalid email") {
-            setMessageAlert("Email không hợp lệ");
+        if (emailError === "error_invalid_email") {
+            setMessageAlert(t('error_invalid_email'));
             status.current = false;
             setHasError(true);
-        } else if (error?.message === "Email not existed") {
-            setMessageAlert("Email không tồn tại trong hệ thống");
+        } else if (error?.message === "error_email_not_existed") {
+            setMessageAlert(t('error_email_not_existed'));
             status.current = false;
             setHasError(true);
-        } else if (message === "Send new password to your email successfully") {
-            setMessageAlert("Mật khẩu mới đã được gửi tới email của bạn");
+        } else if (message === "successs_send") {
+            setMessageAlert(t('successs_send'));
             status.current = true;
             setHasError(false);
             timeOut = setTimeout(() => {
@@ -69,20 +72,23 @@ export const ForgetPassword = () => {
 
     return (
         <div className='bg-[#e8e9ec]'>
+            <div className='absolute top-2 right-4 z-10'>
+                <LanguageSwitch />
+            </div>
             <div className='flex justify-center h-screen items-center relative'>
                 <IoMdArrowBack
                     className='absolute top-10 left-10 text-2xl cursor-pointer'
                     onClick={() => navigate(-1)}
                 />
-                <div className='w-[30%] p-10 pt-4 shadow-md bg-white'>
-                    <h1 className='font-bold text-xl text-center'>Quên mật khẩu</h1>
+                <div className='w-[35%] p-10 pt-4 shadow-md bg-white'>
+                    <h1 className='font-bold text-xl text-center'>{t('forget_pw_title')}</h1>
                     <form onSubmit={handleSubmit} className='space-y-5'>
                         <div>
                             <p className='mb-2 text-md text-center'>
-                                Nhập email đăng ký tài khoản và mật khẩu mới sẽ được gửi về email trong vòng 1-2 phút.
+                               {t("text_forget_pw")}
                             </p>
                             <input
-                                placeholder='Nhập email của bạn'
+                                placeholder={t('placeholder_email')}
                                 onChange={handleOnChangeEmail}
                                 value={inputEmail}
                                 type='text'
@@ -91,7 +97,7 @@ export const ForgetPassword = () => {
                             />
                         </div>
                         <div>
-                            <MyButton text={"Xác nhận"} loading={loading} input={inputEmail} />
+                            <MyButton text={t('confirm')} loading={loading} input={inputEmail} />
                         </div>
                     </form>
                 </div>

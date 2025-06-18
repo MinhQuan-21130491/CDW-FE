@@ -49,6 +49,7 @@ export const currentUser = (token) => async (dispatch) => {
 };
 
 export const updateUser = (data) => async (dispatch) => {
+  console.log(data);
   try {
     const res = await fetch(`${BASE_API_URL}/api/users/update`, {
       method: "PUT",
