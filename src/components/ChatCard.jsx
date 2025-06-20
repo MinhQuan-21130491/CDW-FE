@@ -12,19 +12,19 @@ export default function ChatCard({user, isHide, messageLast, time, group, isMe, 
         console.log(typeMessageLast)
         if(typeMessageLast === "text") {
           if(isMe) {
-            setContent("Bạn: " + messageLast);
+            setContent(t('you') +": " + messageLast);
           }else {
             setContent(messageLast);
           }
         }else {
           if(isMe) {
-            setContent("Bạn: Đã gửi hình ảnh");
+            setContent(t('you') +": Đã gửi hình ảnh");
           }else {
             setContent("Đã gửi hình ảnh");
           }
         }
       }
-  }, [messageLast, typeMessageLast])
+  }, [messageLast, typeMessageLast, t])
   return (
     <div className='px-3 pb-2 cursor-pointerw-full cursor-pointer'>
         {/* Line separator */}
